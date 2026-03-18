@@ -1,24 +1,24 @@
 :root {
-  --bg: #f4efe4;
-  --bg-alt: #efe7d6;
-  --panel: rgba(255, 250, 240, 0.86);
-  --panel-solid: #fffaf0;
-  --ink: #1f2933;
-  --muted: #596674;
-  --line: rgba(31, 41, 51, 0.12);
-  --teal: #0f766e;
-  --teal-strong: #115e59;
-  --amber: #c27c12;
-  --rust: #b45309;
+  --bg: #ffffff;
+  --bg-alt: #f4f9fe;
+  --panel: rgba(255, 255, 255, 0.96);
+  --panel-solid: #ffffff;
+  --ink: #12335f;
+  --muted: #426585;
+  --line: rgba(36, 76, 151, 0.14);
+  --teal: #2dc3d6;
+  --teal-strong: #2397c9;
+  --amber: #2f69c7;
+  --rust: #244c97;
   --danger: #b42318;
-  --shadow: 0 26px 60px rgba(15, 23, 42, 0.12);
+  --shadow: 0 22px 48px rgba(24, 61, 127, 0.1);
   --radius: 24px;
   font-family: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(194, 124, 18, 0.14), transparent 28rem),
-    radial-gradient(circle at 90% 10%, rgba(15, 118, 110, 0.18), transparent 24rem),
-    linear-gradient(180deg, #f8f3e8 0%, #efe6d3 100%);
+    radial-gradient(circle at top left, rgba(47, 105, 199, 0.08), transparent 24rem),
+    radial-gradient(circle at 90% 10%, rgba(45, 195, 214, 0.08), transparent 22rem),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 * {
@@ -66,7 +66,7 @@ button {
 .data-card {
   background: var(--panel);
   backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(36, 76, 151, 0.08);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
 }
@@ -103,8 +103,8 @@ button {
   font-size: 0.84rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--teal-strong);
-  background: rgba(15, 118, 110, 0.08);
+  color: var(--amber);
+  background: rgba(45, 195, 214, 0.12);
 }
 
 .hero-card {
@@ -129,7 +129,7 @@ button {
   width: 220px;
   height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(194, 124, 18, 0.22), transparent 70%);
+  background: radial-gradient(circle, rgba(45, 195, 214, 0.2), transparent 70%);
 }
 
 .date-picker {
@@ -149,8 +149,8 @@ input[type="date"],
 input[type="number"],
 input[type="file"] {
   width: 100%;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(36, 76, 151, 0.18);
+  background: rgba(255, 255, 255, 0.98);
   color: var(--ink);
   border-radius: 16px;
   padding: 12px 14px;
@@ -169,8 +169,8 @@ input[type="file"] {
   gap: 4px;
   padding: 12px 14px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(36, 76, 151, 0.08);
   min-width: 140px;
   flex: 1 1 140px;
 }
@@ -192,8 +192,8 @@ input[type="file"] {
 }
 
 .banner.success {
-  background: rgba(15, 118, 110, 0.08);
-  color: var(--teal-strong);
+  background: rgba(45, 195, 214, 0.1);
+  color: var(--rust);
 }
 
 .banner.error {
@@ -205,11 +205,11 @@ input[type="file"] {
   display: inline-flex;
   gap: 8px;
   flex-wrap: wrap;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.92);
   padding: 8px;
   border-radius: 999px;
   margin-bottom: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(36, 76, 151, 0.12);
 }
 
 .tab {
@@ -234,7 +234,7 @@ input[type="file"] {
 }
 
 .panel.secondary {
-  background: rgba(255, 251, 244, 0.72);
+  background: rgba(249, 252, 255, 0.98);
 }
 
 .stack {
@@ -273,8 +273,8 @@ input[type="file"] {
 .callout {
   padding: 16px 18px;
   border-radius: 18px;
-  border: 1px dashed rgba(194, 124, 18, 0.35);
-  background: rgba(194, 124, 18, 0.08);
+  border: 1px dashed rgba(47, 105, 199, 0.32);
+  background: rgba(45, 195, 214, 0.08);
 }
 
 .upload-strip {
@@ -293,13 +293,13 @@ input[type="file"] {
   border: 0;
   padding: 12px 16px;
   border-radius: 16px;
-  background: rgba(15, 23, 42, 0.06);
+  background: rgba(36, 76, 151, 0.06);
   color: var(--ink);
 }
 
 .button-primary {
   color: white;
-  background: linear-gradient(135deg, var(--teal-strong), var(--teal));
+  background: linear-gradient(135deg, var(--amber), var(--teal));
 }
 
 .button:hover {
@@ -310,7 +310,7 @@ input[type="file"] {
   overflow: auto;
   border-radius: 18px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.98);
 }
 
 table {
@@ -329,7 +329,7 @@ td {
 th {
   position: sticky;
   top: 0;
-  background: rgba(255, 250, 240, 0.95);
+  background: rgba(245, 250, 255, 0.98);
   color: var(--muted);
   font-size: 0.83rem;
   text-transform: uppercase;
@@ -337,7 +337,7 @@ th {
 }
 
 tbody tr:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.42);
+  background: rgba(247, 251, 255, 0.92);
 }
 
 .chart-card {
@@ -360,8 +360,8 @@ tbody tr:nth-child(odd) {
   height: auto;
   display: block;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.3)),
-    radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 32%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 251, 255, 0.96)),
+    radial-gradient(circle at top right, rgba(45, 195, 214, 0.06), transparent 32%);
   border-radius: 20px;
   min-height: 360px;
 }
@@ -371,9 +371,19 @@ tbody tr:nth-child(odd) {
   stroke-dasharray: 4 8;
 }
 
+.chart-axis-line {
+  stroke: rgba(15, 23, 42, 0.22);
+}
+
 .chart-axis-label {
   fill: rgba(89, 102, 116, 0.92);
   font-size: 12px;
+}
+
+.chart-axis-title {
+  fill: rgba(89, 102, 116, 0.92);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .chart-legend {
@@ -398,6 +408,56 @@ tbody tr:nth-child(odd) {
   border-radius: 999px;
   background: var(--swatch);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--swatch) 18%, transparent);
+}
+
+.scenario-picker {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  overflow: hidden;
+}
+
+.scenario-picker summary {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 18px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.scenario-picker summary::-webkit-details-marker {
+  display: none;
+}
+
+.scenario-picker summary span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.scenario-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 18px 18px;
+}
+
+.scenario-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(36, 76, 151, 0.1);
+}
+
+.scenario-option input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--amber);
 }
 
 .field-grid {
@@ -432,8 +492,8 @@ tbody tr:nth-child(odd) {
   margin-top: 14px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(15, 118, 110, 0.08);
-  color: var(--teal-strong);
+  background: rgba(45, 195, 214, 0.1);
+  color: var(--rust);
 }
 
 .empty-chart {
@@ -474,6 +534,7 @@ tbody tr:nth-child(odd) {
 
   .hero-toolbar,
   .upload-strip,
+  .scenario-options,
   .field-grid {
     grid-template-columns: 1fr;
   }
