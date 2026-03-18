@@ -1,13 +1,13 @@
 import { escapeHtml, formatPercentage } from "./formatters.js";
 
 const palette = [
-  "#0f766e",
-  "#1d4ed8",
-  "#ca8a04",
-  "#dc2626",
-  "#7c3aed",
-  "#0f172a",
-  "#059669",
+  "#2f69c7",
+  "#2dc3d6",
+  "#2397c9",
+  "#244c97",
+  "#4f8fd8",
+  "#1c3568",
+  "#66d2df",
 ];
 
 function buildPath(points, dimensions, xMin, xMax, yMin, yMax) {
@@ -28,7 +28,32 @@ function buildPath(points, dimensions, xMin, xMax, yMin, yMax) {
     .join(" ");
 }
 
-export function renderLineChart({ title, subtitle, series }) {
+function buildXTicks(chartSeries, maxTicks = 7) {
+  const referencePoints = chartSeries[0]?.points ?? [];
+
+  if (!referencePoints.length) {
+    return [];
+  }
+
+  if (referencePoints.length <= maxTicks) {
+    return referencePoints;
+  }
+
+  const tickIndexes = new Set([0, referencePoints.length - 1]);
+  const denominator = maxTicks - 1;
+
+  for (let index = 1; index < denominator; index += 1) {
+    tickIndexes.add(
+      Math.round((index * (referencePoints.length - 1)) / denominator),
+    );
+  }
+
+  return [...tickIndexes]
+    .sort((left, right) => left - right)
+    .map((index) => referencePoints[index]);
+}
+
+export function renderLineChart({ title, subtitle, series, xAxisTitle = "Maturity (T)" }) {
   const chartSeries = series.filter((entry) => entry.points.length > 1);
 
   if (!chartSeries.length) {
@@ -41,7 +66,7 @@ export function renderLineChart({ title, subtitle, series }) {
     margin: {
       top: 18,
       right: 20,
-      bottom: 18,
+      bottom: 64,
       left: 92,
     },
   };
@@ -67,6 +92,10 @@ export function renderLineChart({ title, subtitle, series }) {
       y,
     };
   });
+  const plotWidth = width - margin.left - margin.right;
+  const xTicks = buildXTicks(chartSeries);
+  const scaleX = (value) =>
+    margin.left + ((value - xMin) / (xMax - xMin || 1)) * plotWidth;
 
   return `
     <div class="chart-card">
@@ -100,6 +129,42 @@ export function renderLineChart({ title, subtitle, series }) {
               `,
             )
             .join("")}
+          <line
+            x1="${margin.left}"
+            x2="${width - margin.right}"
+            y1="${height - margin.bottom}"
+            y2="${height - margin.bottom}"
+            class="chart-axis-line"
+          />
+          ${xTicks
+            .map(
+              (point) => `
+                <line
+                  x1="${scaleX(point.x)}"
+                  x2="${scaleX(point.x)}"
+                  y1="${height - margin.bottom}"
+                  y2="${height - margin.bottom + 8}"
+                  class="chart-axis-line"
+                />
+                <text
+                  x="${scaleX(point.x)}"
+                  y="${height - margin.bottom + 24}"
+                  text-anchor="middle"
+                  class="chart-axis-label"
+                >
+                  ${escapeHtml(point.label ?? String(point.x))}
+                </text>
+              `,
+            )
+            .join("")}
+          <text
+            x="${width / 2}"
+            y="${height - 14}"
+            text-anchor="middle"
+            class="chart-axis-title"
+          >
+            ${escapeHtml(xAxisTitle)}
+          </text>
           ${chartSeries
             .map(
               (entry, index) => `
