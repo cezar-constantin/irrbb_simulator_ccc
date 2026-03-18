@@ -31,6 +31,14 @@ const state = {
   datasets: null,
   shockParameters: loadShockParameters(DEFAULT_SHOCK_PARAMETERS),
   selectedDate: null,
+  selectedScenarios: [
+    "parallelUp",
+    "parallelDown",
+    "steepener",
+    "flattener",
+    "shortRateUp",
+    "shortRateDown",
+  ],
   pendingFiles: {
     roBonds: null,
     robor: null,
@@ -38,6 +46,51 @@ const state = {
   message: "",
   error: "",
 };
+
+const STRESS_SCENARIOS = [
+  {
+    key: "parallelUp",
+    label: "Parallel up",
+    shockField: "parallelUp",
+    yieldField: "parallelUp",
+    discountField: "parallelShockUp",
+  },
+  {
+    key: "parallelDown",
+    label: "Parallel down",
+    shockField: "parallelDown",
+    yieldField: "parallelDown",
+    discountField: "parallelShockDown",
+  },
+  {
+    key: "steepener",
+    label: "Steepener",
+    shockField: "steepener",
+    yieldField: "steepener",
+    discountField: "steepenerShock",
+  },
+  {
+    key: "flattener",
+    label: "Flattener",
+    shockField: "flattener",
+    yieldField: "flattener",
+    discountField: "flattenerShock",
+  },
+  {
+    key: "shortRateUp",
+    label: "Short up",
+    shockField: "shortRateUp",
+    yieldField: "shortRateUp",
+    discountField: "shortRatesShockUp",
+  },
+  {
+    key: "shortRateDown",
+    label: "Short down",
+    shockField: "shortRateDown",
+    yieldField: "shortRateDown",
+    discountField: "shortRatesShockDown",
+  },
+];
 
 function syncSelectedDate() {
   if (!state.datasets) {
@@ -85,6 +138,22 @@ function setNestedValue(target, path, nextValue) {
   }
 
   cursor[keys.at(-1)] = nextValue;
+}
+
+function getNestedValue(target, path) {
+  return path.split(".").reduce((cursor, key) => cursor?.[key], target);
+}
+
+function getScenarioDefinition(key) {
+  return STRESS_SCENARIOS.find((scenario) => scenario.key === key);
+}
+
+function getPreviewWindow(rows, selectedDate, count = 5) {
+  const visibleRows = selectedDate
+    ? rows.filter((row) => row.date <= selectedDate)
+    : rows;
+
+  return visibleRows.slice(0, count);
 }
 
 function buildTable(columns, rows) {
@@ -156,9 +225,9 @@ function renderUploadSummary(label, summary, sourceLabel, pendingUpload) {
   `;
 }
 
-function renderPreviewTables(datasets) {
-  const roBondsPreview = datasets.roBonds.slice(0, 5);
-  const roborPreview = datasets.robor.slice(0, 5);
+function renderPreviewTables(datasets, selectedDate) {
+  const roBondsPreview = getPreviewWindow(datasets.roBonds, selectedDate);
+  const roborPreview = getPreviewWindow(datasets.robor, selectedDate);
 
   return `
     <div class="panel-grid">
@@ -166,7 +235,7 @@ function renderPreviewTables(datasets) {
         <div class="section-header compact">
           <div>
             <h3>RO Bonds Preview</h3>
-            <p>Latest bond bid inputs driving the curve construction.</p>
+            <p>Last 5 available bond dates at or before the selected market date.</p>
           </div>
         </div>
         ${buildTable(
@@ -195,7 +264,7 @@ function renderPreviewTables(datasets) {
         <div class="section-header compact">
           <div>
             <h3>ROBOR Preview</h3>
-            <p>Money-market fixings used in the market-rates section.</p>
+            <p>Last 5 available ROBOR dates at or before the selected market date.</p>
           </div>
         </div>
         ${buildTable(
@@ -238,8 +307,8 @@ function renderDataTab(datasets, availableDates) {
         <div>
           <h2>Data Update</h2>
           <p>
-            The simulator ships with the workbook seed data and can be refreshed with new CSV files.
-            Uploaded files are stored in your browser so the web app stays usable after deployment.
+            The simlator is build on the Robor and Romanian Bonds data. Upload more recent files to
+            generate results and analytics that are more up to date.
           </p>
         </div>
         <div class="metric-pills">
@@ -273,12 +342,7 @@ function renderDataTab(datasets, availableDates) {
         <button class="button button-primary" data-action="apply-uploads">Apply update</button>
         <button class="button" data-action="reset-data">Reset workbook seed</button>
       </div>
-      <div class="callout">
-        <strong>Workbook compatibility note.</strong>
-        The market-rate functions mirror the spreadsheet lookups exactly, including the workbook's
-        9M fallback logic used in the 18M step.
-      </div>
-      ${renderPreviewTables(datasets)}
+      ${renderPreviewTables(datasets, state.selectedDate)}
     </section>
   `;
 }
@@ -331,13 +395,14 @@ function renderYieldCurveTab(simulation) {
 
   const chart = renderLineChart({
     title: "Observed zero-coupon curve",
-    subtitle: "Workbook-equivalent market-rate transformations for the selected date.",
+    subtitle: "Select a new date to update the yield curve",
     series: [
       {
         label: "Yield curve",
         points: simulation.yieldCurve.map((row) => ({
           x: row.t,
           y: row.yieldCurve,
+          label: row.maturity,
         })),
       },
     ],
@@ -349,8 +414,8 @@ function renderYieldCurveTab(simulation) {
         <div>
           <h2>Yield Curve</h2>
           <p>
-            This tab reproduces the workbook's market-rate table and the yield-curve table from the
-            selected market date.
+            In this section we show how the market rates from the Robor and Romanian Bonds market can
+            be used to bootstrap a yield curve for the Romanian RON.
           </p>
         </div>
       </div>
@@ -418,6 +483,7 @@ function renderBootstrappedTab(simulation) {
         points: simulation.yieldCurve.map((row) => ({
           x: row.t,
           y: row.yieldCurve,
+          label: row.maturity,
         })),
       },
       {
@@ -425,6 +491,7 @@ function renderBootstrappedTab(simulation) {
         points: simulation.bootstrappedCurve.map((row) => ({
           x: row.t,
           y: row.interpolatedYield,
+          label: row.maturity,
         })),
       },
     ],
@@ -436,8 +503,8 @@ function renderBootstrappedTab(simulation) {
         <div>
           <h2>Bootstrapped Yield Curve</h2>
           <p>
-            The fitted curve extends the workbook logic by calibrating <em>beta 0</em>, <em>beta 1</em>,
-            <em>beta 2</em>, and <em>lambda</em> through squared-error minimization.
+            In this section we show a continous version of the yield curve, based on a interpolated
+            function with 5 parameters.
           </p>
         </div>
         <div class="metric-pills">
@@ -449,11 +516,6 @@ function renderBootstrappedTab(simulation) {
         </div>
       </div>
       ${chart}
-      <div class="callout">
-        <strong>Calibration note.</strong>
-        The original workbook's cached Solver setup only adjusted the beta terms. This simulator also
-        optimizes lambda, as requested, while keeping the Nelson-Siegel functional form intact.
-      </div>
       <section class="panel secondary">
         <div class="section-header compact">
           <div>
@@ -467,44 +529,105 @@ function renderBootstrappedTab(simulation) {
   `;
 }
 
-function renderShockControls(parameters) {
+function renderScenarioSelector(selectedScenarios) {
+  return `
+    <details class="scenario-picker">
+      <summary>
+        Stress scenarios
+        <span>${selectedScenarios.length} selected</span>
+      </summary>
+      <div class="scenario-options">
+        ${STRESS_SCENARIOS.map(
+          (scenario) => `
+            <label class="scenario-option">
+              <input
+                data-scenario-key="${escapeHtml(scenario.key)}"
+                type="checkbox"
+                ${selectedScenarios.includes(scenario.key) ? "checked" : ""}
+              />
+              <span>${escapeHtml(scenario.label)}</span>
+            </label>
+          `,
+        ).join("")}
+      </div>
+    </details>
+  `;
+}
+
+function renderShockControls(parameters, selectedScenarios) {
   const groups = [
     {
       title: "Parallel shifts",
       fields: [
-        ["parallel.up", "Up shock", parameters.parallel.up],
-        ["parallel.down", "Down shock", parameters.parallel.down],
+        {
+          path: "parallel.up",
+          label: "Up shock",
+          show: () => selectedScenarios.includes("parallelUp"),
+        },
+        {
+          path: "parallel.down",
+          label: "Down shock",
+          show: () => selectedScenarios.includes("parallelDown"),
+        },
       ],
     },
     {
       title: "Steepener",
       fields: [
-        ["steepener.shortWeight", "Short weight", parameters.steepener.shortWeight],
-        ["steepener.shortAmplitude", "Short amplitude", parameters.steepener.shortAmplitude],
-        ["steepener.longWeight", "Long weight", parameters.steepener.longWeight],
-        ["steepener.longAmplitude", "Long amplitude", parameters.steepener.longAmplitude],
-        ["steepener.decay", "Decay", parameters.steepener.decay],
+        { path: "steepener.shortWeight", label: "Short weight", show: () => selectedScenarios.includes("steepener") },
+        { path: "steepener.shortAmplitude", label: "Short amplitude", show: () => selectedScenarios.includes("steepener") },
+        { path: "steepener.longWeight", label: "Long weight", show: () => selectedScenarios.includes("steepener") },
+        { path: "steepener.longAmplitude", label: "Long amplitude", show: () => selectedScenarios.includes("steepener") },
+        { path: "steepener.decay", label: "Decay", show: () => selectedScenarios.includes("steepener") },
       ],
     },
     {
       title: "Flattener",
       fields: [
-        ["flattener.shortWeight", "Short weight", parameters.flattener.shortWeight],
-        ["flattener.shortAmplitude", "Short amplitude", parameters.flattener.shortAmplitude],
-        ["flattener.longWeight", "Long weight", parameters.flattener.longWeight],
-        ["flattener.longAmplitude", "Long amplitude", parameters.flattener.longAmplitude],
-        ["flattener.decay", "Decay", parameters.flattener.decay],
+        { path: "flattener.shortWeight", label: "Short weight", show: () => selectedScenarios.includes("flattener") },
+        { path: "flattener.shortAmplitude", label: "Short amplitude", show: () => selectedScenarios.includes("flattener") },
+        { path: "flattener.longWeight", label: "Long weight", show: () => selectedScenarios.includes("flattener") },
+        { path: "flattener.longAmplitude", label: "Long amplitude", show: () => selectedScenarios.includes("flattener") },
+        { path: "flattener.decay", label: "Decay", show: () => selectedScenarios.includes("flattener") },
       ],
     },
     {
       title: "Short-rate shocks",
       fields: [
-        ["shortRate.upAmplitude", "Up amplitude", parameters.shortRate.upAmplitude],
-        ["shortRate.downAmplitude", "Down amplitude", parameters.shortRate.downAmplitude],
-        ["shortRate.decay", "Decay", parameters.shortRate.decay],
+        {
+          path: "shortRate.upAmplitude",
+          label: "Up amplitude",
+          show: () => selectedScenarios.includes("shortRateUp"),
+        },
+        {
+          path: "shortRate.downAmplitude",
+          label: "Down amplitude",
+          show: () => selectedScenarios.includes("shortRateDown"),
+        },
+        {
+          path: "shortRate.decay",
+          label: "Decay",
+          show: () =>
+            selectedScenarios.includes("shortRateUp") ||
+            selectedScenarios.includes("shortRateDown"),
+        },
       ],
     },
-  ];
+  ]
+    .map((group) => ({
+      ...group,
+      fields: group.fields.filter((field) => field.show()),
+    }))
+    .filter((group) => group.fields.length);
+
+  if (!groups.length) {
+    return `
+      <div class="callout">
+        <strong>No stress scenario selected.</strong>
+        Choose one or more scenarios from the dropdown to display the relevant controls and charts.
+      </div>
+    `;
+  }
 
   return `
     <div class="panel-grid">
@@ -515,20 +638,20 @@ function renderShockControls(parameters) {
               <div class="section-header compact">
                 <div>
                   <h3>${escapeHtml(group.title)}</h3>
-                  <p>Editable parameters feeding the stress-shock functions.</p>
+                  <p>Editable parameters feeding the selected stress-shock functions.</p>
                 </div>
               </div>
               <div class="field-grid">
                 ${group.fields
                   .map(
-                    ([path, label, value]) => `
+                    (field) => `
                       <label class="field">
-                        <span>${escapeHtml(label)}</span>
+                        <span>${escapeHtml(field.label)}</span>
                         <input
-                          data-shock-path="${escapeHtml(path)}"
+                          data-shock-path="${escapeHtml(field.path)}"
                           type="number"
                           step="0.0001"
-                          value="${escapeHtml(String(value))}"
+                          value="${escapeHtml(String(getNestedValue(parameters, field.path)))}"
                         />
                       </label>
                     `,
@@ -544,6 +667,9 @@ function renderShockControls(parameters) {
 }
 
 function renderDiscountFactorsTab(simulation) {
+  const selectedScenarioDefinitions = state.selectedScenarios
+    .map((key) => getScenarioDefinition(key))
+    .filter(Boolean);
   const shockRows = simulation.discountFactors.map((row) => ({
     maturity: row.maturity,
     t: row.t,
@@ -560,30 +686,10 @@ function renderDiscountFactorsTab(simulation) {
         label: "T",
         render: (row) => escapeHtml(formatDecimal(row.t, 6)),
       },
-      {
-        label: "Parallel up",
-        render: (row) => escapeHtml(formatPercentage(row.parallelUp, 3)),
-      },
-      {
-        label: "Parallel down",
-        render: (row) => escapeHtml(formatPercentage(row.parallelDown, 3)),
-      },
-      {
-        label: "Steepener",
-        render: (row) => escapeHtml(formatPercentage(row.steepener, 3)),
-      },
-      {
-        label: "Flattener",
-        render: (row) => escapeHtml(formatPercentage(row.flattener, 3)),
-      },
-      {
-        label: "Short up",
-        render: (row) => escapeHtml(formatPercentage(row.shortRateUp, 3)),
-      },
-      {
-        label: "Short down",
-        render: (row) => escapeHtml(formatPercentage(row.shortRateDown, 3)),
-      },
+      ...selectedScenarioDefinitions.map((scenario) => ({
+        label: scenario.label,
+        render: (row) => escapeHtml(formatPercentage(row[scenario.shockField], 3)),
+      })),
     ],
     shockRows,
   );
@@ -598,88 +704,59 @@ function renderDiscountFactorsTab(simulation) {
         label: "Current",
         render: (row) => escapeHtml(formatDecimal(row.currentDiscountFactor, 6)),
       },
-      {
-        label: "Parallel up",
-        render: (row) => escapeHtml(formatDecimal(row.parallelShockUp, 6)),
-      },
-      {
-        label: "Parallel down",
-        render: (row) => escapeHtml(formatDecimal(row.parallelShockDown, 6)),
-      },
-      {
-        label: "Steepener",
-        render: (row) => escapeHtml(formatDecimal(row.steepenerShock, 6)),
-      },
-      {
-        label: "Flattener",
-        render: (row) => escapeHtml(formatDecimal(row.flattenerShock, 6)),
-      },
-      {
-        label: "Short up",
-        render: (row) => escapeHtml(formatDecimal(row.shortRatesShockUp, 6)),
-      },
-      {
-        label: "Short down",
-        render: (row) => escapeHtml(formatDecimal(row.shortRatesShockDown, 6)),
-      },
+      ...selectedScenarioDefinitions.map((scenario) => ({
+        label: scenario.label,
+        render: (row) => escapeHtml(formatDecimal(row[scenario.discountField], 6)),
+      })),
     ],
     simulation.discountFactors,
   );
 
-  const chart = renderLineChart({
+  const shockedYieldChart = renderLineChart({
     title: "Shocked yield curves",
     subtitle:
-      "Base bootstrapped yields shifted by the editable stress-shock functions from the Discount factors sheet.",
+      "Base bootstrapped yields shifted by the selected stress-shock functions.",
     series: [
       {
         label: "Current",
         points: simulation.discountFactors.map((row) => ({
           x: row.t,
           y: row.shockedYields.current,
+          label: row.maturity,
         })),
       },
-      {
-        label: "Parallel up",
+      ...selectedScenarioDefinitions.map((scenario) => ({
+        label: scenario.label,
         points: simulation.discountFactors.map((row) => ({
           x: row.t,
-          y: row.shockedYields.parallelUp,
+          y: row.shockedYields[scenario.yieldField],
+          label: row.maturity,
         })),
-      },
+      })),
+    ],
+  });
+
+  const discountFactorsChart = renderLineChart({
+    title: "Shocked discount factors",
+    subtitle:
+      "Current discount factors and the selected stressed discount-factor curves over the maturity axis.",
+    series: [
       {
-        label: "Parallel down",
+        label: "Current",
         points: simulation.discountFactors.map((row) => ({
           x: row.t,
-          y: row.shockedYields.parallelDown,
+          y: row.currentDiscountFactor,
+          label: row.maturity,
         })),
       },
-      {
-        label: "Steepener",
+      ...selectedScenarioDefinitions.map((scenario) => ({
+        label: scenario.label,
         points: simulation.discountFactors.map((row) => ({
           x: row.t,
-          y: row.shockedYields.steepener,
+          y: row[scenario.discountField],
+          label: row.maturity,
         })),
-      },
-      {
-        label: "Flattener",
-        points: simulation.discountFactors.map((row) => ({
-          x: row.t,
-          y: row.shockedYields.flattener,
-        })),
-      },
-      {
-        label: "Short up",
-        points: simulation.discountFactors.map((row) => ({
-          x: row.t,
-          y: row.shockedYields.shortRateUp,
-        })),
-      },
-      {
-        label: "Short down",
-        points: simulation.discountFactors.map((row) => ({
-          x: row.t,
-          y: row.shockedYields.shortRateDown,
-        })),
-      },
+      })),
     ],
   });
 
@@ -687,21 +764,25 @@ function renderDiscountFactorsTab(simulation) {
     <section class="panel stack">
       <div class="section-header">
         <div>
-          <h2>Discount Factors</h2>
+          <h2>Stress Tests</h2>
           <p>
-            Stress shocks are applied to the bootstrapped curve and converted into shocked yield curves
-            and discount-factor tables. All shock-function parameters are editable.
+            Choose one or more stress scenarios, adjust only the relevant parameters, and review the
+            resulting shocked yield curves and discount factors.
           </p>
         </div>
       </div>
-      ${renderShockControls(state.shockParameters)}
-      ${chart}
+      ${renderScenarioSelector(state.selectedScenarios)}
+      ${renderShockControls(state.shockParameters, state.selectedScenarios)}
+      <div class="panel-grid">
+        ${shockedYieldChart}
+        ${discountFactorsChart}
+      </div>
       <div class="panel-grid">
         <section class="panel secondary">
           <div class="section-header compact">
             <div>
               <h3>Stress shock series</h3>
-              <p>Scenario shifts as a function of maturity.</p>
+              <p>Scenario shifts as a function of maturity for the selected stresses.</p>
             </div>
           </div>
           ${shockTable}
@@ -725,7 +806,7 @@ function renderTabs() {
     ["data", "Data update"],
     ["yield", "Yield curve"],
     ["bootstrapped", "Bootstrapped curve"],
-    ["discount", "Discount factors"],
+    ["discount", "Stress tests"],
   ];
 
   return `
@@ -915,6 +996,26 @@ async function onChange(event) {
       setError(error instanceof Error ? error.message : String(error));
     }
 
+    render();
+    return;
+  }
+
+  if (target.matches("input[data-scenario-key]")) {
+    const scenarioKey = target.getAttribute("data-scenario-key");
+
+    if (!scenarioKey) {
+      return;
+    }
+
+    state.selectedScenarios = STRESS_SCENARIOS
+      .map((scenario) => scenario.key)
+      .filter((key) =>
+        key === scenarioKey
+          ? target.checked
+          : state.selectedScenarios.includes(key),
+      );
+
+    clearFeedback();
     render();
     return;
   }
