@@ -198,10 +198,6 @@ function renderDatasetSummary(label, summary, sourceLabel) {
       </div>
       <div class="data-grid">
         <div>
-          <span class="label">Source</span>
-          <strong>${escapeHtml(sourceLabel)}</strong>
-        </div>
-        <div>
           <span class="label">First date</span>
           <strong>${escapeHtml(formatDateLabel(summary.first))}</strong>
         </div>

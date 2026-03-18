@@ -219,12 +219,8 @@ async function main() {
   const roBonds = mergeRows(workbookRoBonds, roBondsExtension);
   const robor = mergeRows(workbookRobor, roborExtension);
   const metadata = buildMetadata(roBonds, robor, {
-    roBonds: roBondsExtension.length
-      ? "Bundled historical series (workbook + March 2026 extension)"
-      : "Bundled historical series (workbook only)",
-    robor: roborExtension.length
-      ? "Bundled historical series (workbook + March 2026 extension)"
-      : "Bundled historical series (workbook only)",
+    roBonds: "Information sourced from www.bnr.ro",
+    robor: "Information sourced from www.bnr.ro",
     updatedAt: new Date().toISOString(),
   });
 

@@ -10,8 +10,8 @@ function hydrateDatasetMetadata(datasets) {
     metadata: {
       ...datasets.metadata,
       source: {
-        roBonds: datasets.metadata?.source?.roBonds ?? "Bundled historical series",
-        robor: datasets.metadata?.source?.robor ?? "Bundled historical series",
+        roBonds: datasets.metadata?.source?.roBonds ?? "Information sourced from www.bnr.ro",
+        robor: datasets.metadata?.source?.robor ?? "Information sourced from www.bnr.ro",
         updatedAt: datasets.metadata?.source?.updatedAt ?? null,
       },
     },
