@@ -1014,7 +1014,7 @@ function render() {
     <header class="hero">
       <div class="hero-copy">
         <span class="eyebrow">IRRBB simulator</span>
-        <h1>Romanian yield curves, bootstrapping, and stress test simulator.</h1>
+        <h1>Romanian yield curve, bootstrapping, and stress test simulator.</h1>
         <p>
           This web simulator uses Robor and Romanian Bonds inputs, boostraps the yield curve and
           calibrates a continous time version to the observed market quotes.
