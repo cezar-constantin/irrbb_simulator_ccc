@@ -10,10 +10,14 @@ const palette = [
   "#059669",
 ];
 
-function buildPath(points, width, height, xMin, xMax, yMin, yMax) {
-  const scaleX = (value) => ((value - xMin) / (xMax - xMin || 1)) * width;
+function buildPath(points, dimensions, xMin, xMax, yMin, yMax) {
+  const { width, height, margin } = dimensions;
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const scaleX = (value) =>
+    margin.left + ((value - xMin) / (xMax - xMin || 1)) * plotWidth;
   const scaleY = (value) =>
-    height - ((value - yMin) / (yMax - yMin || 1)) * height;
+    margin.top + plotHeight - ((value - yMin) / (yMax - yMin || 1)) * plotHeight;
 
   return points
     .map((point, index) => {
@@ -31,8 +35,18 @@ export function renderLineChart({ title, subtitle, series }) {
     return `<div class="empty-chart">No chart data is available for the selected inputs.</div>`;
   }
 
-  const width = 720;
-  const height = 320;
+  const dimensions = {
+    width: 960,
+    height: 440,
+    margin: {
+      top: 18,
+      right: 20,
+      bottom: 18,
+      left: 92,
+    },
+  };
+  const { width, height, margin } = dimensions;
+  const plotHeight = height - margin.top - margin.bottom;
   const xValues = chartSeries.flatMap((entry) => entry.points.map((point) => point.x));
   const yValues = chartSeries.flatMap((entry) => entry.points.map((point) => point.y));
   const xMin = Math.min(...xValues);
@@ -46,7 +60,7 @@ export function renderLineChart({ title, subtitle, series }) {
   const guideRows = Array.from({ length: horizontalGuides }, (_, index) => {
     const value =
       viewYMax - ((viewYMax - viewYMin) / (horizontalGuides - 1)) * index;
-    const y = ((height / (horizontalGuides - 1)) * index).toFixed(2);
+    const y = (margin.top + (plotHeight / (horizontalGuides - 1)) * index).toFixed(2);
 
     return {
       value,
@@ -56,7 +70,7 @@ export function renderLineChart({ title, subtitle, series }) {
 
   return `
     <div class="chart-card">
-      <div class="section-header">
+      <div class="chart-header">
         <div>
           <h3>${escapeHtml(title)}</h3>
           <p>${escapeHtml(subtitle)}</p>
@@ -79,8 +93,8 @@ export function renderLineChart({ title, subtitle, series }) {
           ${guideRows
             .map(
               (guide) => `
-                <line x1="0" x2="${width}" y1="${guide.y}" y2="${guide.y}" class="chart-grid-line" />
-                <text x="8" y="${Math.max(Number(guide.y) - 6, 14)}" class="chart-axis-label">
+                <line x1="${margin.left}" x2="${width - margin.right}" y1="${guide.y}" y2="${guide.y}" class="chart-grid-line" />
+                <text x="${margin.left - 12}" y="${Number(guide.y) + 4}" text-anchor="end" class="chart-axis-label">
                   ${formatPercentage(guide.value, 2)}
                 </text>
               `,
@@ -92,8 +106,7 @@ export function renderLineChart({ title, subtitle, series }) {
                 <path
                   d="${buildPath(
                     entry.points,
-                    width,
-                    height,
+                    dimensions,
                     xMin,
                     xMax,
                     viewYMin,

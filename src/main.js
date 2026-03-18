@@ -319,7 +319,7 @@ function renderYieldCurveTab(simulation) {
       {
         label: "Coupon",
         render: (row) =>
-          row.coupon == null ? "—" : escapeHtml(formatPercentage(row.coupon, 3)),
+          row.coupon == null ? "-" : escapeHtml(formatPercentage(row.coupon, 3)),
       },
       {
         label: "Yield curve",
@@ -402,7 +402,7 @@ function renderBootstrappedTab(simulation) {
       {
         label: "Error",
         render: (row) =>
-          row.error == null ? "—" : escapeHtml(formatDecimal(row.error, 6)),
+          row.error == null ? "-" : escapeHtml(formatDecimal(row.error, 6)),
       },
     ],
     simulation.bootstrappedCurve,
@@ -791,13 +791,17 @@ function render() {
     <header class="hero">
       <div class="hero-copy">
         <span class="eyebrow">IRRBB simulator</span>
-        <h1>Romanian yield curves, bootstrapping, and stress shocks in the browser.</h1>
+        <h1>Romanian yield curves, bootstrapping, and stress test simulator.</h1>
         <p>
-          This web simulator mirrors the workbook flow using RO Bonds and ROBOR inputs, adds uploadable
-          CSV refreshes, and calibrates the Nelson-Siegel parameters online.
+          This web simulator uses Robor and Romanian Bonds inputs, boostraps the yield curve and
+          calibrates a continous time version to the observed market quotes.
+        </p>
+        <p>
+          Additionally, stressed discount factors are calculated based on the user input, for
+          parallel shifts, steepener, flattener and short up/down scenarios.
         </p>
       </div>
-      <div class="hero-card">
+      <div class="hero-card hero-toolbar">
         <label class="date-picker">
           <span>Market date</span>
           <input type="date" value="${escapeHtml(state.selectedDate ?? "")}" />
