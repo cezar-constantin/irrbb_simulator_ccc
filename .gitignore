@@ -4,3 +4,4 @@ dist/
 *.log
 desktop.ini
 Thumbs.db
+data/Yield curves.xls

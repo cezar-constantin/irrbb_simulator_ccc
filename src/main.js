@@ -5,13 +5,9 @@ import {
   calculateSimulatorState,
   getAvailableDates,
 } from "./lib/calculator.js";
-import { parseRoBondsCsv, parseRoborCsv } from "./lib/csv.js";
 import {
-  buildUploadedDatasets,
   loadDatasets,
   loadShockParameters,
-  resetDatasets,
-  saveDatasets,
   saveShockParameters,
   summarizeDataset,
 } from "./lib/datasets.js";
@@ -39,10 +35,6 @@ const state = {
     "shortRateUp",
     "shortRateDown",
   ],
-  pendingFiles: {
-    roBonds: null,
-    robor: null,
-  },
   message: "",
   error: "",
 };
@@ -194,13 +186,7 @@ function renderPill(label, value) {
   `;
 }
 
-function renderUploadSummary(label, summary, sourceLabel, pendingUpload) {
-  const pendingLabel = pendingUpload
-    ? `<p class="pending-upload">Ready to apply: <strong>${escapeHtml(
-        pendingUpload.name,
-      )}</strong> (${pendingUpload.rows.length} rows)</p>`
-    : "";
-
+function renderDatasetSummary(label, summary, sourceLabel) {
   return `
     <div class="data-card">
       <div class="section-header compact">
@@ -212,6 +198,10 @@ function renderUploadSummary(label, summary, sourceLabel, pendingUpload) {
       </div>
       <div class="data-grid">
         <div>
+          <span class="label">Source</span>
+          <strong>${escapeHtml(sourceLabel)}</strong>
+        </div>
+        <div>
           <span class="label">First date</span>
           <strong>${escapeHtml(formatDateLabel(summary.first))}</strong>
         </div>
@@ -220,7 +210,6 @@ function renderUploadSummary(label, summary, sourceLabel, pendingUpload) {
           <strong>${escapeHtml(formatDateLabel(summary.last))}</strong>
         </div>
       </div>
-      ${pendingLabel}
     </div>
   `;
 }
@@ -305,10 +294,11 @@ function renderDataTab(datasets, availableDates) {
     <section class="panel stack">
       <div class="section-header">
         <div>
-          <h2>Data Update</h2>
+          <h2>Input Data</h2>
           <p>
-            The simlator is build on the Robor and Romanian Bonds data. Upload more recent files to
-            generate results and analytics that are more up to date.
+            The simulator is built on integrated ROBOR and Romanian Bonds history. The bundled market
+            series extends from the workbook seed through March 2026, so the analytics run directly on
+            the built-in data without manual uploads.
           </p>
         </div>
         <div class="metric-pills">
@@ -317,30 +307,16 @@ function renderDataTab(datasets, availableDates) {
         </div>
       </div>
       <div class="panel-grid">
-        ${renderUploadSummary(
+        ${renderDatasetSummary(
           "RO Bonds",
           roBondsSummary,
-          datasets.metadata?.source?.roBonds ?? "Workbook seed",
-          state.pendingFiles.roBonds,
+          datasets.metadata?.source?.roBonds ?? "Bundled historical series",
         )}
-        ${renderUploadSummary(
+        ${renderDatasetSummary(
           "ROBOR",
           roborSummary,
-          datasets.metadata?.source?.robor ?? "Workbook seed",
-          state.pendingFiles.robor,
+          datasets.metadata?.source?.robor ?? "Bundled historical series",
         )}
-      </div>
-      <div class="upload-strip">
-        <label class="upload-field">
-          <span>RO Bonds CSV</span>
-          <input data-file-kind="roBonds" type="file" accept=".csv,text/csv" />
-        </label>
-        <label class="upload-field">
-          <span>ROBOR CSV</span>
-          <input data-file-kind="robor" type="file" accept=".csv,text/csv" />
-        </label>
-        <button class="button button-primary" data-action="apply-uploads">Apply update</button>
-        <button class="button" data-action="reset-data">Reset workbook seed</button>
       </div>
       ${renderPreviewTables(datasets, state.selectedDate)}
     </section>
@@ -807,7 +783,7 @@ function renderDiscountFactorsTab(simulation) {
 
 function renderTabs() {
   const tabs = [
-    ["data", "Data update"],
+    ["data", "Input data"],
     ["yield", "Yield curve"],
     ["bootstrapped", "Bootstrapped curve"],
     ["discount", "Stress tests"],
@@ -846,8 +822,8 @@ function render() {
       <div class="layout">
         <section class="panel">
           <span class="eyebrow">IRRBB simulator</span>
-          <h2>Loading workbook seed data...</h2>
-          <p>The RO Bonds and ROBOR history is being prepared for the online simulator.</p>
+          <h2>Loading historical market data...</h2>
+          <p>The integrated RO Bonds and ROBOR history is being prepared for the simulator.</p>
         </section>
       </div>
     `;
@@ -894,7 +870,7 @@ function render() {
         <div class="hero-meta">
           ${renderPill("Latest overlap", formatDateLabel(availableDates[0]))}
           ${renderPill("Seed timezone", state.datasets.metadata?.calendarTimeZone ?? "Europe/Bucharest")}
-          ${renderPill("Stored datasets", `${state.datasets.roBonds.length + state.datasets.robor.length} rows`)}
+          ${renderPill("Historical rows", `${state.datasets.roBonds.length + state.datasets.robor.length} rows`)}
         </div>
       </div>
     </header>
@@ -906,7 +882,7 @@ function render() {
     activePanel = `
       <section class="panel">
         <h2>No common dates found</h2>
-        <p>Upload RO Bonds and ROBOR CSVs that share at least one market date to run the simulator.</p>
+        <p>The bundled RO Bonds and ROBOR histories do not currently share a common market date.</p>
       </section>
     `;
   } else if (simulationError) {
@@ -936,31 +912,6 @@ function render() {
   `;
 }
 
-async function handleFileUpload(kind, file) {
-  if (!file) {
-    state.pendingFiles[kind] = null;
-    render();
-    return;
-  }
-
-  const text = await file.text();
-  const rows =
-    kind === "roBonds" ? parseRoBondsCsv(text) : parseRoborCsv(text);
-
-  if (!rows.length) {
-    throw new Error(`The ${kind === "roBonds" ? "RO Bonds" : "ROBOR"} CSV is empty.`);
-  }
-
-  state.pendingFiles[kind] = {
-    name: file.name,
-    rows,
-  };
-
-  setMessage(
-    `${kind === "roBonds" ? "RO Bonds" : "ROBOR"} upload parsed successfully with ${rows.length} rows.`,
-  );
-}
-
 async function onChange(event) {
   const target = event.target;
 
@@ -985,21 +936,6 @@ async function onChange(event) {
 
     clearFeedback();
     state.selectedDate = nextDate;
-    render();
-    return;
-  }
-
-  if (target.matches("input[data-file-kind]")) {
-    const fileKind = target.getAttribute("data-file-kind");
-    const file = target instanceof HTMLInputElement ? target.files?.[0] : null;
-
-    try {
-      clearFeedback();
-      await handleFileUpload(fileKind, file);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-    }
-
     render();
     return;
   }
@@ -1053,39 +989,6 @@ async function onClick(event) {
   if (tab) {
     state.activeTab = tab;
     render();
-    return;
-  }
-
-  const action = target.getAttribute("data-action");
-
-  if (action === "apply-uploads") {
-    if (!state.pendingFiles.roBonds && !state.pendingFiles.robor) {
-      setError("Upload at least one CSV before applying a data refresh.");
-      render();
-      return;
-    }
-
-    state.datasets = buildUploadedDatasets(state.datasets, {
-      roBonds: state.pendingFiles.roBonds?.rows,
-      robor: state.pendingFiles.robor?.rows,
-      roBondsSource: state.pendingFiles.roBonds?.name,
-      roborSource: state.pendingFiles.robor?.name,
-    });
-
-    saveDatasets(state.datasets);
-    state.pendingFiles = { roBonds: null, robor: null };
-    syncSelectedDate();
-    setMessage("Uploaded CSV data has been applied to the simulator.");
-    render();
-    return;
-  }
-
-  if (action === "reset-data") {
-    state.datasets = await resetDatasets();
-    state.pendingFiles = { roBonds: null, robor: null };
-    syncSelectedDate();
-    setMessage("The workbook seed data has been restored.");
-    render();
   }
 }
 
@@ -1102,7 +1005,7 @@ loadDatasets()
   })
   .catch((error) => {
     setError(
-      error instanceof Error ? error.message : "Unable to load the workbook seed data.",
+      error instanceof Error ? error.message : "Unable to load the built-in historical market data.",
     );
     state.datasets = { metadata: {}, roBonds: [], robor: [] };
     render();

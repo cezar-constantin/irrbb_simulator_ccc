@@ -7,6 +7,11 @@ import {
 } from "../src/lib/calculator.js";
 import { defaultDatasets } from "../src/data/defaultData.js";
 
+const workbookCandidates = [
+  path.resolve("data/Yield curves.xls"),
+  path.resolve("Yield curves.xls"),
+];
+
 function workbookDate(value) {
   return XLSX.SSF.format("yyyy-mm-dd", value);
 }
@@ -25,8 +30,24 @@ function getCellValue(sheet, address) {
   return sheet[address]?.v ?? null;
 }
 
+function resolveWorkbookPath() {
+  for (const candidate of workbookCandidates) {
+    if (XLSX.readFile == null) {
+      break;
+    }
+    try {
+      XLSX.readFile(candidate, { bookSheets: true });
+      return candidate;
+    } catch {
+      // Continue searching the candidate list.
+    }
+  }
+
+  throw new Error(`Unable to find the workbook file. Checked: ${workbookCandidates.join(", ")}`);
+}
+
 function main() {
-  const workbook = XLSX.readFile(path.resolve("Yield curves.xls"), {
+  const workbook = XLSX.readFile(resolveWorkbookPath(), {
     cellFormula: true,
     raw: true,
   });

@@ -1,9 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import XLSX from "xlsx";
+import { parseRoBondsCsv, parseRoborCsv } from "../src/lib/csv.js";
 
-const workbookPath = path.resolve("Yield curves.xls");
+const workbookCandidates = [
+  path.resolve("data/Yield curves.xls"),
+  path.resolve("Yield curves.xls"),
+];
 const outputPath = path.resolve("src/data/defaultData.js");
+const roBondsCsvPath = path.resolve("data/ro_bonds.csv");
+const roborCsvPath = path.resolve("data/robor.csv");
 
 const roBondsColumns = [
   ["tsBid6M", 1],
@@ -132,7 +138,46 @@ function extractRows(sheet, columns) {
   return rows;
 }
 
-function buildMetadata(roBonds, robor) {
+async function loadOptionalCsvRows(filePath, parser) {
+  try {
+    const text = await fs.readFile(filePath, "utf8");
+    return parser(text);
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
+async function resolveExistingPath(candidates, label) {
+  for (const candidate of candidates) {
+    try {
+      await fs.access(candidate);
+      return candidate;
+    } catch {
+      // Continue searching the candidate list.
+    }
+  }
+
+  throw new Error(`Unable to find ${label}. Checked: ${candidates.join(", ")}`);
+}
+
+function mergeRows(baseRows, extensionRows) {
+  const merged = new Map(baseRows.map((row) => [row.date, { ...row }]));
+
+  for (const row of extensionRows) {
+    merged.set(row.date, {
+      ...(merged.get(row.date) ?? {}),
+      ...row,
+    });
+  }
+
+  return [...merged.values()].sort((left, right) => right.date.localeCompare(left.date));
+}
+
+function buildMetadata(roBonds, robor, source) {
   const availableDates = [...new Set(roBonds.map((row) => row.date))].sort();
   const roborDates = [...new Set(robor.map((row) => row.date))].sort();
 
@@ -154,10 +199,12 @@ function buildMetadata(roBonds, robor) {
         last: roborDates.at(-1) ?? null,
       },
     },
+    source,
   };
 }
 
 async function main() {
+  const workbookPath = await resolveExistingPath(workbookCandidates, "the workbook file");
   const workbook = XLSX.readFile(workbookPath, {
     cellFormula: false,
     cellNF: false,
@@ -165,9 +212,21 @@ async function main() {
     raw: true,
   });
 
-  const roBonds = extractRows(workbook.Sheets["RO Bonds"], roBondsColumns);
-  const robor = extractRows(workbook.Sheets.Robor, roborColumns);
-  const metadata = buildMetadata(roBonds, robor);
+  const workbookRoBonds = extractRows(workbook.Sheets["RO Bonds"], roBondsColumns);
+  const workbookRobor = extractRows(workbook.Sheets.Robor, roborColumns);
+  const roBondsExtension = await loadOptionalCsvRows(roBondsCsvPath, parseRoBondsCsv);
+  const roborExtension = await loadOptionalCsvRows(roborCsvPath, parseRoborCsv);
+  const roBonds = mergeRows(workbookRoBonds, roBondsExtension);
+  const robor = mergeRows(workbookRobor, roborExtension);
+  const metadata = buildMetadata(roBonds, robor, {
+    roBonds: roBondsExtension.length
+      ? "Bundled historical series (workbook + March 2026 extension)"
+      : "Bundled historical series (workbook only)",
+    robor: roborExtension.length
+      ? "Bundled historical series (workbook + March 2026 extension)"
+      : "Bundled historical series (workbook only)",
+    updatedAt: new Date().toISOString(),
+  });
 
   const moduleSource = `export const defaultDatasets = ${JSON.stringify(
     { metadata, roBonds, robor },
