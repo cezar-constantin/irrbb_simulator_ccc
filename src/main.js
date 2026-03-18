@@ -84,6 +84,45 @@ const STRESS_SCENARIOS = [
   },
 ];
 
+const HISTORY_WINDOWS = [
+  { key: "all", label: "Full history", days: null },
+  { key: "3m", label: "3M", days: 92 },
+  { key: "6m", label: "6M", days: 183 },
+  { key: "1y", label: "1Y", days: 366 },
+  { key: "2y", label: "2Y", days: 731 },
+  { key: "5y", label: "5Y", days: 1827 },
+];
+
+const INPUT_HISTORY_CHARTS = {
+  roBonds: {
+    rowsKey: "roBonds",
+    title: "RO Bonds Time Series",
+    subtitle:
+      "Historical Romanian government bond quotes ending at the selected market date.",
+    xAxisTitle: "Date",
+    series: [
+      { key: "tsBid3Y", label: "3Y Bid" },
+      { key: "tsBid5Y", label: "5Y Bid" },
+      { key: "tsBid10Y", label: "10Y Bid" },
+    ],
+  },
+  robor: {
+    rowsKey: "robor",
+    title: "ROBOR Time Series",
+    subtitle:
+      "Historical ROBOR fixings ending at the selected market date.",
+    xAxisTitle: "Date",
+    series: [
+      { key: "roborTomorrowNext", label: "TN" },
+      { key: "robor1W", label: "1W" },
+      { key: "robor1M", label: "1M" },
+      { key: "robor3M", label: "3M" },
+      { key: "robor6M", label: "6M" },
+      { key: "robor12M", label: "12M" },
+    ],
+  },
+};
+
 function syncSelectedDate() {
   if (!state.datasets) {
     state.selectedDate = null;
@@ -138,6 +177,28 @@ function getNestedValue(target, path) {
 
 function getScenarioDefinition(key) {
   return STRESS_SCENARIOS.find((scenario) => scenario.key === key);
+}
+
+function buildDefaultHistoryCharts() {
+  return Object.fromEntries(
+    Object.entries(INPUT_HISTORY_CHARTS).map(([chartKey, config]) => [
+      chartKey,
+      {
+        window: "all",
+        series: config.series.map((entry) => entry.key),
+      },
+    ]),
+  );
+}
+
+state.historyCharts = buildDefaultHistoryCharts();
+
+function parseDateToTimestamp(value) {
+  const [year, month, day] = String(value)
+    .split("-")
+    .map((part) => Number(part));
+
+  return Date.UTC(year, month - 1, day);
 }
 
 function getPreviewWindow(rows, selectedDate, count = 5) {
@@ -208,6 +269,107 @@ function renderDatasetSummary(label, summary, sourceLabel) {
       </div>
     </div>
   `;
+}
+
+function formatRateLabel(value) {
+  if (value == null || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  return `${formatNumber(value, 2)}%`;
+}
+
+function getHistoryRows(rows, selectedDate, windowKey) {
+  const boundedRows = selectedDate
+    ? rows.filter((row) => row.date <= selectedDate)
+    : rows;
+
+  if (!boundedRows.length) {
+    return [];
+  }
+
+  const windowDefinition = HISTORY_WINDOWS.find((entry) => entry.key === windowKey);
+
+  if (!windowDefinition || windowDefinition.days == null) {
+    return [...boundedRows].reverse();
+  }
+
+  const endTimestamp = parseDateToTimestamp(boundedRows[0].date);
+  const windowStart = endTimestamp - windowDefinition.days * 24 * 60 * 60 * 1000;
+
+  return boundedRows
+    .filter((row) => parseDateToTimestamp(row.date) >= windowStart)
+    .reverse();
+}
+
+function renderHistoryControls(chartKey, selection, config) {
+  return `
+    <div class="chart-controls">
+      <label class="field chart-control-field">
+        <span>Time window</span>
+        <select data-history-window="${escapeHtml(chartKey)}">
+          ${HISTORY_WINDOWS.map(
+            (window) => `
+              <option value="${escapeHtml(window.key)}" ${
+                selection.window === window.key ? "selected" : ""
+              }>
+                ${escapeHtml(window.label)}
+              </option>
+            `,
+          ).join("")}
+        </select>
+      </label>
+      <div class="chart-series-picker">
+        <span class="label">Visible series</span>
+        <div class="chart-series-options">
+          ${config.series
+            .map(
+              (entry) => `
+                <label class="chart-series-option">
+                  <input
+                    type="checkbox"
+                    data-history-chart="${escapeHtml(chartKey)}"
+                    data-history-series="${escapeHtml(entry.key)}"
+                    ${selection.series.includes(entry.key) ? "checked" : ""}
+                  />
+                  <span>${escapeHtml(entry.label)}</span>
+                </label>
+              `,
+            )
+            .join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderInputHistoryChart(chartKey, datasets, selectedDate) {
+  const config = INPUT_HISTORY_CHARTS[chartKey];
+  const selection = state.historyCharts[chartKey];
+  const rows = getHistoryRows(datasets[config.rowsKey], selectedDate, selection.window);
+  const series = config.series
+    .filter((entry) => selection.series.includes(entry.key))
+    .map((entry) => ({
+      label: entry.label,
+      points: rows
+        .filter((row) => Number.isFinite(row[entry.key]))
+        .map((row) => ({
+          x: parseDateToTimestamp(row.date),
+          y: row[entry.key],
+          label: row.date,
+        })),
+    }));
+
+  return renderLineChart({
+    title: config.title,
+    subtitle: `${config.subtitle} Use the controls to shorten the horizon or hide individual series.`,
+    xAxisTitle: config.xAxisTitle,
+    formatYValue: formatRateLabel,
+    formatXTick: (point) => formatDateLabel(point.label),
+    emptyMessage: "Select at least one series to display the historical time series.",
+    controlsHtml: renderHistoryControls(chartKey, selection, config),
+    series,
+  });
 }
 
 function renderPreviewTables(datasets, selectedDate) {
@@ -315,6 +477,10 @@ function renderDataTab(datasets, availableDates) {
         )}
       </div>
       ${renderPreviewTables(datasets, state.selectedDate)}
+      <div class="panel-grid">
+        ${renderInputHistoryChart("roBonds", datasets, state.selectedDate)}
+        ${renderInputHistoryChart("robor", datasets, state.selectedDate)}
+      </div>
     </section>
   `;
 }
@@ -932,6 +1098,57 @@ async function onChange(event) {
 
     clearFeedback();
     state.selectedDate = nextDate;
+    render();
+    return;
+  }
+
+  if (target.matches("select[data-history-window]")) {
+    const chartKey = target.getAttribute("data-history-window");
+    const nextWindow = target.value;
+
+    if (!chartKey || !INPUT_HISTORY_CHARTS[chartKey]) {
+      return;
+    }
+
+    state.historyCharts = {
+      ...state.historyCharts,
+      [chartKey]: {
+        ...state.historyCharts[chartKey],
+        window: nextWindow,
+      },
+    };
+
+    clearFeedback();
+    render();
+    return;
+  }
+
+  if (target.matches("input[data-history-series]")) {
+    const chartKey = target.getAttribute("data-history-chart");
+    const seriesKey = target.getAttribute("data-history-series");
+
+    if (!chartKey || !seriesKey || !INPUT_HISTORY_CHARTS[chartKey]) {
+      return;
+    }
+
+    const chartConfig = INPUT_HISTORY_CHARTS[chartKey];
+    const nextSeries = chartConfig.series
+      .map((entry) => entry.key)
+      .filter((key) =>
+        key === seriesKey
+          ? target.checked
+          : state.historyCharts[chartKey].series.includes(key),
+      );
+
+    state.historyCharts = {
+      ...state.historyCharts,
+      [chartKey]: {
+        ...state.historyCharts[chartKey],
+        series: nextSeries,
+      },
+    };
+
+    clearFeedback();
     render();
     return;
   }

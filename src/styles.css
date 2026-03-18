@@ -38,6 +38,7 @@ body {
 
 button,
 input,
+select,
 table {
   font: inherit;
 }
@@ -147,7 +148,8 @@ button {
 
 input[type="date"],
 input[type="number"],
-input[type="file"] {
+input[type="file"],
+select {
   width: 100%;
   border: 1px solid rgba(36, 76, 151, 0.18);
   background: rgba(255, 255, 255, 0.98);
@@ -351,6 +353,46 @@ tbody tr:nth-child(odd) {
   padding: 24px 24px 10px;
 }
 
+.chart-controls {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  gap: 16px;
+  padding: 0 24px 12px;
+  align-items: start;
+}
+
+.chart-control-field {
+  align-self: stretch;
+}
+
+.chart-series-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.chart-series-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chart-series-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(36, 76, 151, 0.1);
+  color: var(--muted);
+}
+
+.chart-series-option input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--amber);
+}
+
 .chart-shell {
   padding: 0 20px 22px;
 }
@@ -511,7 +553,8 @@ tbody tr:nth-child(odd) {
   }
 
   .hero-toolbar,
-  .upload-strip {
+  .upload-strip,
+  .chart-controls {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -537,7 +580,8 @@ tbody tr:nth-child(odd) {
   .hero-toolbar,
   .upload-strip,
   .scenario-options,
-  .field-grid {
+  .field-grid,
+  .chart-controls {
     grid-template-columns: 1fr;
   }
 

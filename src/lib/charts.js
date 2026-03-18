@@ -53,11 +53,33 @@ function buildXTicks(chartSeries, maxTicks = 7) {
     .map((index) => referencePoints[index]);
 }
 
-export function renderLineChart({ title, subtitle, series, xAxisTitle = "Maturity (T)" }) {
+export function renderLineChart({
+  title,
+  subtitle,
+  series,
+  xAxisTitle = "Maturity (T)",
+  formatYValue = (value) => formatPercentage(value, 2),
+  formatXTick = (point) => point.label ?? String(point.x),
+  emptyMessage = "No chart data is available for the selected inputs.",
+  controlsHtml = "",
+}) {
   const chartSeries = series.filter((entry) => entry.points.length > 1);
 
   if (!chartSeries.length) {
-    return `<div class="empty-chart">No chart data is available for the selected inputs.</div>`;
+    return `
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <h3>${escapeHtml(title)}</h3>
+            <p>${escapeHtml(subtitle)}</p>
+          </div>
+        </div>
+        ${controlsHtml}
+        <div class="chart-shell">
+          <div class="empty-chart">${escapeHtml(emptyMessage)}</div>
+        </div>
+      </div>
+    `;
   }
 
   const dimensions = {
@@ -117,6 +139,7 @@ export function renderLineChart({ title, subtitle, series, xAxisTitle = "Maturit
             .join("")}
         </div>
       </div>
+      ${controlsHtml}
       <div class="chart-shell">
         <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title)}">
           ${guideRows
@@ -124,11 +147,18 @@ export function renderLineChart({ title, subtitle, series, xAxisTitle = "Maturit
               (guide) => `
                 <line x1="${margin.left}" x2="${width - margin.right}" y1="${guide.y}" y2="${guide.y}" class="chart-grid-line" />
                 <text x="${margin.left - 12}" y="${Number(guide.y) + 4}" text-anchor="end" class="chart-axis-label">
-                  ${formatPercentage(guide.value, 2)}
+                  ${escapeHtml(formatYValue(guide.value))}
                 </text>
               `,
             )
             .join("")}
+          <line
+            x1="${margin.left}"
+            x2="${margin.left}"
+            y1="${margin.top}"
+            y2="${height - margin.bottom}"
+            class="chart-axis-line"
+          />
           <line
             x1="${margin.left}"
             x2="${width - margin.right}"
@@ -152,7 +182,7 @@ export function renderLineChart({ title, subtitle, series, xAxisTitle = "Maturit
                   text-anchor="middle"
                   class="chart-axis-label"
                 >
-                  ${escapeHtml(point.label ?? String(point.x))}
+                  ${escapeHtml(formatXTick(point))}
                 </text>
               `,
             )
