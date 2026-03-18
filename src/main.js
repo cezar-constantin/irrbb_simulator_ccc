@@ -396,6 +396,7 @@ function renderYieldCurveTab(simulation) {
   const chart = renderLineChart({
     title: "Observed zero-coupon curve",
     subtitle: "Select a new date to update the yield curve",
+    xAxisTitle: "Time to maturity",
     series: [
       {
         label: "Yield curve",
@@ -477,6 +478,7 @@ function renderBootstrappedTab(simulation) {
     title: "Bootstrapped vs calibrated curve",
     subtitle:
       "Observed zero rates are matched with a four-parameter Nelson-Siegel fit and extended to 30 years.",
+    xAxisTitle: "Time to maturity",
     series: [
       {
         label: "Observed curve",
@@ -716,6 +718,7 @@ function renderDiscountFactorsTab(simulation) {
     title: "Shocked yield curves",
     subtitle:
       "Base bootstrapped yields shifted by the selected stress-shock functions.",
+    xAxisTitle: "Time to maturity",
     series: [
       {
         label: "Current",
@@ -740,6 +743,7 @@ function renderDiscountFactorsTab(simulation) {
     title: "Shocked discount factors",
     subtitle:
       "Current discount factors and the selected stressed discount-factor curves over the maturity axis.",
+    xAxisTitle: "Time to maturity",
     series: [
       {
         label: "Current",

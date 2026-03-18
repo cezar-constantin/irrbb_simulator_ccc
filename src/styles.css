@@ -372,16 +372,18 @@ tbody tr:nth-child(odd) {
 }
 
 .chart-axis-line {
-  stroke: rgba(15, 23, 42, 0.22);
+  stroke: rgba(36, 76, 151, 0.36);
+  stroke-width: 1.4;
 }
 
 .chart-axis-label {
-  fill: rgba(89, 102, 116, 0.92);
+  fill: rgba(36, 76, 151, 0.9);
   font-size: 12px;
+  font-weight: 600;
 }
 
 .chart-axis-title {
-  fill: rgba(89, 102, 116, 0.92);
+  fill: rgba(24, 53, 104, 0.95);
   font-size: 13px;
   font-weight: 600;
 }
