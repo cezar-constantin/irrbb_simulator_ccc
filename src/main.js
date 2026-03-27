@@ -23,11 +23,12 @@ import {
 const app = document.querySelector("#app");
 
 const state = {
-  activeTab: "data",
+  activeTab: "description",
   datasets: null,
   shockParameters: loadShockParameters(DEFAULT_SHOCK_PARAMETERS),
   selectedDate: null,
   selectedDates: {
+    description: null,
     data: null,
     yield: null,
     bootstrapped: null,
@@ -97,6 +98,14 @@ const TARGET_REPO_URL = "https://github.com/cezar-constantin/irrbb_simulator_ccc
 const CONTACT_EMAIL = "contact@cezar-constantin-chirila.com";
 
 const TAB_DEFINITIONS = [
+  {
+    key: "description",
+    label: "Description",
+    kicker: "Overview",
+    title: "Understand what the simulator is doing.",
+    description:
+      "See the full IRRBB workflow in plain language before moving into the historical data, observed curve, calibration, and stress views.",
+  },
   {
     key: "data",
     label: "Input data",
@@ -174,6 +183,7 @@ function syncSelectedDate() {
   if (!state.datasets) {
     state.selectedDate = null;
     state.selectedDates = {
+      description: null,
       data: null,
       yield: null,
       bootstrapped: null,
@@ -187,6 +197,7 @@ function syncSelectedDate() {
   if (!availableDates.length) {
     state.selectedDate = null;
     state.selectedDates = {
+      description: null,
       data: null,
       yield: null,
       bootstrapped: null,
@@ -312,26 +323,6 @@ function renderPill(label, value) {
       <span>${escapeHtml(label)}</span>
       <strong>${escapeHtml(value)}</strong>
     </div>
-  `;
-}
-
-function renderHeroStat(label, value, note) {
-  return `
-    <article class="hero-stat">
-      <p class="metric-label">${escapeHtml(label)}</p>
-      <strong>${escapeHtml(value)}</strong>
-      <p>${escapeHtml(note)}</p>
-    </article>
-  `;
-}
-
-function renderBriefingCard(kicker, title, copy) {
-  return `
-    <article class="briefing-card">
-      <p class="card-kicker">${escapeHtml(kicker)}</p>
-      <h3>${escapeHtml(title)}</h3>
-      <p>${escapeHtml(copy)}</p>
-    </article>
   `;
 }
 
@@ -1110,45 +1101,98 @@ function renderHero(availableDates) {
   `;
 }
 
-function renderBriefingPanel(datasets, availableDates, simulation) {
-  const activeTab = getTabDefinition(state.activeTab);
-  const coverageCopy = availableDates.length
-    ? `${formatDateLabel(availableDates.at(-1))} through ${formatDateLabel(availableDates[0])}.`
-    : "No overlapping dates are currently available.";
-
-  const calibrationCopy = simulation
-    ? `Lambda ${formatDecimal(simulation.calibration.lambda, 6)} with objective ${formatDecimal(
-        simulation.calibration.objective,
-        6,
-      )} across ${simulation.marketRates.length} market inputs.`
-    : "Calibration metrics will appear once a valid market date is available.";
+function renderDescriptionTab(datasets, simulation, availableDates) {
+  const selectedDateLabel = formatDateLabel(state.selectedDate);
+  const latestOverlap = formatDateLabel(availableDates[0]);
+  const earliestOverlap = formatDateLabel(availableDates.at(-1));
+  const calibrationObjective = simulation
+    ? formatDecimal(simulation.calibration.objective, 6)
+    : "-";
 
   return `
-    <section class="card readout-panel">
-      <div class="section-heading">
+    <section class="panel stack">
+      <div class="section-header">
         <div>
-          <p class="section-kicker">Readout</p>
-          <h2>What the workspace is doing</h2>
+          <h2>Description</h2>
+          <p>
+            This simulator turns historical Romanian ROBOR and government bond data into a complete
+            IRRBB workflow you can inspect one step at a time. Each tab focuses on a different stage,
+            while keeping the selected market date tied to the tab you are using.
+          </p>
         </div>
-        <span class="status-pill">${escapeHtml(activeTab.label)}</span>
+        <div class="metric-pills">
+          ${renderPill("Example date", selectedDateLabel)}
+          ${renderPill("Market window", `${earliestOverlap} to ${latestOverlap}`)}
+          ${renderPill("Curve objective", calibrationObjective)}
+        </div>
       </div>
 
-      <div class="briefing-grid">
-        ${renderBriefingCard(activeTab.kicker, activeTab.title, activeTab.description)}
-        ${renderBriefingCard(
-          "Coverage",
-          `${datasets.metadata?.counts?.roBonds ?? datasets.roBonds.length} bond rows and ${
-            datasets.metadata?.counts?.robor ?? datasets.robor.length
-          } ROBOR rows`,
-          coverageCopy,
-        )}
-        ${renderBriefingCard("Calibration", "Current fit snapshot", calibrationCopy)}
-        ${renderBriefingCard(
-          "Stress testing",
-          "Scenario configuration",
-          `${formatScenarioSummary(state.selectedScenarios)}. Shock edits persist locally between visits.`,
-        )}
+      <div class="panel-grid">
+        <article class="explain-card">
+          <p class="card-kicker">Step 1</p>
+          <h3>Input data</h3>
+          <p>
+            Start by checking the built-in ROBOR and RO Bonds history. This shows the raw market
+            observations that feed the rest of the simulator.
+          </p>
+        </article>
+
+        <article class="explain-card">
+          <p class="card-kicker">Step 2</p>
+          <h3>Yield curve</h3>
+          <p>
+            The simulator converts those market quotes into fair rates, discount factors, and an
+            observed zero-coupon curve for the chosen date.
+          </p>
+        </article>
+
+        <article class="explain-card">
+          <p class="card-kicker">Step 3</p>
+          <h3>Bootstrapped curve</h3>
+          <p>
+            A Nelson-Siegel fit extends the observed curve into a smoother continuous term structure,
+            so the calibration quality stays visible instead of hidden.
+          </p>
+        </article>
+
+        <article class="explain-card">
+          <p class="card-kicker">Step 4</p>
+          <h3>Stress tests</h3>
+          <p>
+            Parallel, steepener, flattener, and short-rate shocks can then be adjusted to compare
+            stressed yield curves and discount factors side by side.
+          </p>
+        </article>
       </div>
+
+      <section class="panel secondary">
+        <div class="section-header compact">
+          <div>
+            <h3>How to use it</h3>
+            <p>Move from left to right through the tabs or jump directly to the section you need.</p>
+          </div>
+        </div>
+
+        <div class="panel-grid">
+          <article class="explain-card">
+            <p class="card-kicker">Dates</p>
+            <h3>Each tab remembers its own market date.</h3>
+            <p>
+              You can compare different dates across tabs without losing your previous selection when
+              switching between views.
+            </p>
+          </article>
+
+          <article class="explain-card">
+            <p class="card-kicker">Shocks</p>
+            <h3>Stress parameters stay editable.</h3>
+            <p>
+              Scenario inputs remain connected to the stress-testing tab, so the shock curves update
+              immediately when you change a parameter.
+            </p>
+          </article>
+        </div>
+      </section>
     </section>
   `;
 }
@@ -1350,6 +1394,8 @@ function render() {
         </div>
       </section>
     `;
+  } else if (state.activeTab === "description") {
+    activePanel = renderDescriptionTab(state.datasets, simulation, availableDates);
   } else if (state.activeTab === "data") {
     activePanel = renderDataTab(state.datasets, availableDates);
   } else if (state.activeTab === "yield") {
@@ -1364,7 +1410,6 @@ function render() {
     <div class="page-shell">
       ${renderHeader()}
       ${renderHero(availableDates)}
-      ${renderBriefingPanel(state.datasets, availableDates, simulation)}
 
       <section class="page-section" id="simulator-section">
         <section class="section-intro">
@@ -1375,6 +1420,8 @@ function render() {
             discount factors in one narrative workspace so each step stays traceable.
           </p>
         </section>
+
+        ${renderTabs()}
 
         <section class="card simulator-panel">
           <div class="section-heading">

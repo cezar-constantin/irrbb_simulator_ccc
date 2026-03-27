@@ -305,9 +305,7 @@ svg {
 }
 
 .hero-main,
-.hero-side,
-.briefing-list,
-.briefing-grid {
+.briefing-list {
   display: grid;
   gap: 16px;
   min-width: 0;
@@ -329,8 +327,10 @@ svg {
 }
 
 .hero h1 {
-  font-size: clamp(2.7rem, 5vw, 4.9rem);
-  max-width: 13ch;
+  width: 100%;
+  font-size: clamp(1.7rem, 2.2vw, 2.55rem);
+  max-width: none;
+  white-space: nowrap;
 }
 
 .eyebrow,
@@ -370,27 +370,6 @@ svg {
 .data-grid strong,
 .data-count {
   color: var(--text);
-}
-
-.hero-side {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: start;
-}
-
-.hero-stat {
-  padding: 20px;
-}
-
-.hero-stat strong {
-  display: block;
-  margin-top: 8px;
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 1.14rem;
-}
-
-.hero-stat p:last-child {
-  font-size: 0.92rem;
-  line-height: 1.6;
 }
 
 .page-section {
@@ -445,15 +424,10 @@ svg {
 
 .simulator-panel,
 .briefing-panel,
-.readout-panel,
 .support-card,
 .disclaimer-card {
   padding: 30px;
   align-content: start;
-}
-
-.briefing-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .simulator-toolbar {
@@ -884,9 +858,6 @@ tbody tr:nth-child(odd) {
     grid-template-columns: 1fr;
   }
 
-  .briefing-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 1100px) {
@@ -917,7 +888,6 @@ tbody tr:nth-child(odd) {
   .hero,
   .simulator-panel,
   .briefing-panel,
-  .readout-panel,
   .support-card,
   .disclaimer-card {
     padding: 22px;
@@ -926,10 +896,6 @@ tbody tr:nth-child(odd) {
   .section-heading,
   .section-header {
     flex-direction: column;
-  }
-
-  .hero-side {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .chart-header {
@@ -966,7 +932,6 @@ tbody tr:nth-child(odd) {
   .hero,
   .simulator-panel,
   .briefing-panel,
-  .readout-panel,
   .support-card,
   .disclaimer-card {
     padding: 18px;
@@ -976,6 +941,7 @@ tbody tr:nth-child(odd) {
   .hero h1 {
     font-size: clamp(1.95rem, 8vw, 2.8rem);
     max-width: none;
+    white-space: normal;
   }
 
   .panel-grid,
@@ -983,7 +949,6 @@ tbody tr:nth-child(odd) {
   .data-grid,
   .explain-grid,
   .footer-panel-grid,
-  .briefing-grid,
   .scenario-options,
   .chart-controls {
     grid-template-columns: 1fr;
@@ -1044,6 +1009,7 @@ tbody tr:nth-child(odd) {
 
   .hero h1 {
     font-size: clamp(1.75rem, 9vw, 2.35rem);
+    white-space: normal;
   }
 
   .metric-pills,
