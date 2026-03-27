@@ -132,7 +132,7 @@ svg {
 
 .brand-mark,
 .header-chip,
-.nav-link,
+.nav-tab,
 .contact-copy a,
 .support-link {
   color: var(--text);
@@ -174,7 +174,7 @@ svg {
   flex-wrap: wrap;
 }
 
-.nav-link,
+.nav-tab,
 .header-chip,
 .support-link {
   display: inline-flex;
@@ -191,21 +191,29 @@ svg {
     box-shadow var(--transition);
 }
 
-.nav-link {
+.nav-tab {
+  border: 0;
+  background: transparent;
   color: var(--muted);
 }
 
-.nav-link:hover,
+.nav-tab:hover,
 .header-chip:hover,
 .support-link:hover,
 .contact-copy a:hover {
   color: var(--text);
 }
 
-.nav-link:hover,
+.nav-tab:hover,
 .header-chip:hover,
 .support-link:hover {
   transform: translateY(-1px);
+}
+
+.nav-tab.is-active {
+  color: white;
+  background: linear-gradient(135deg, var(--blue), var(--cyan));
+  box-shadow: 0 16px 30px rgba(34, 211, 238, 0.16);
 }
 
 .header-chip,
@@ -287,7 +295,7 @@ svg {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+  grid-template-columns: 1fr;
   gap: 24px;
   padding: 38px;
   background:
@@ -298,7 +306,8 @@ svg {
 
 .hero-main,
 .hero-side,
-.briefing-list {
+.briefing-list,
+.briefing-grid {
   display: grid;
   gap: 16px;
   min-width: 0;
@@ -434,18 +443,17 @@ svg {
   font-weight: 600;
 }
 
-.workspace-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
-  gap: 24px;
-}
-
 .simulator-panel,
 .briefing-panel,
+.readout-panel,
 .support-card,
 .disclaimer-card {
   padding: 30px;
   align-content: start;
+}
+
+.briefing-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .simulator-toolbar {
@@ -871,11 +879,13 @@ tbody tr:nth-child(odd) {
 }
 
 @media (max-width: 1200px) {
-  .hero,
-  .workspace-grid,
   .explain-grid,
   .footer-panel-grid {
     grid-template-columns: 1fr;
+  }
+
+  .briefing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -907,6 +917,7 @@ tbody tr:nth-child(odd) {
   .hero,
   .simulator-panel,
   .briefing-panel,
+  .readout-panel,
   .support-card,
   .disclaimer-card {
     padding: 22px;
@@ -955,6 +966,7 @@ tbody tr:nth-child(odd) {
   .hero,
   .simulator-panel,
   .briefing-panel,
+  .readout-panel,
   .support-card,
   .disclaimer-card {
     padding: 18px;
@@ -966,12 +978,12 @@ tbody tr:nth-child(odd) {
     max-width: none;
   }
 
-  .hero-side,
   .panel-grid,
   .field-grid,
   .data-grid,
   .explain-grid,
   .footer-panel-grid,
+  .briefing-grid,
   .scenario-options,
   .chart-controls {
     grid-template-columns: 1fr;

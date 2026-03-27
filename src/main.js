@@ -27,6 +27,12 @@ const state = {
   datasets: null,
   shockParameters: loadShockParameters(DEFAULT_SHOCK_PARAMETERS),
   selectedDate: null,
+  selectedDates: {
+    data: null,
+    yield: null,
+    bootstrapped: null,
+    discount: null,
+  },
   selectedScenarios: [
     "parallelUp",
     "parallelDown",
@@ -167,6 +173,12 @@ const INPUT_HISTORY_CHARTS = {
 function syncSelectedDate() {
   if (!state.datasets) {
     state.selectedDate = null;
+    state.selectedDates = {
+      data: null,
+      yield: null,
+      bootstrapped: null,
+      discount: null,
+    };
     return;
   }
 
@@ -174,12 +186,23 @@ function syncSelectedDate() {
 
   if (!availableDates.length) {
     state.selectedDate = null;
+    state.selectedDates = {
+      data: null,
+      yield: null,
+      bootstrapped: null,
+      discount: null,
+    };
     return;
   }
 
-  if (!state.selectedDate || !availableDates.includes(state.selectedDate)) {
-    state.selectedDate = availableDates[0];
-  }
+  state.selectedDates = Object.fromEntries(
+    TAB_DEFINITIONS.map((tab) => {
+      const selectedDate = state.selectedDates?.[tab.key];
+      return [tab.key, availableDates.includes(selectedDate) ? selectedDate : availableDates[0]];
+    }),
+  );
+
+  state.selectedDate = state.selectedDates[state.activeTab] ?? availableDates[0];
 }
 
 function setMessage(message) {
@@ -1038,11 +1061,19 @@ function renderHeader() {
         </span>
       </a>
 
-      <nav class="top-nav" aria-label="Section navigation">
-        <a class="nav-link" href="#simulator-section">Simulator</a>
-        <a class="nav-link" href="#framework-section">Framework</a>
-        <a class="nav-link" href="#contact-section">Contact</a>
-      </nav>
+      <div class="top-nav" aria-label="Simulator tabs">
+        ${TAB_DEFINITIONS.map(
+          (tab) => `
+            <button
+              class="nav-tab ${state.activeTab === tab.key ? "is-active" : ""}"
+              type="button"
+              data-tab="${tab.key}"
+            >
+              ${escapeHtml(tab.label)}
+            </button>
+          `,
+        ).join("")}
+      </div>
 
       <div class="header-actions">
         <a class="header-chip" href="${PORTFOLIO_URL}" target="_blank" rel="noreferrer">
@@ -1056,10 +1087,9 @@ function renderHeader() {
   `;
 }
 
-function renderHero(datasets, availableDates, simulation) {
+function renderHero(availableDates) {
   const overlapStart = formatDateLabel(availableDates.at(-1));
   const overlapEnd = formatDateLabel(availableDates[0]);
-  const calibration = simulation?.calibration;
 
   return `
     <section class="hero card">
@@ -1075,34 +1105,6 @@ function renderHero(datasets, availableDates, simulation) {
           Market coverage:
           <strong>${escapeHtml(overlapStart)} to ${escapeHtml(overlapEnd)}</strong>
         </p>
-      </div>
-
-      <div class="hero-side">
-        ${renderHeroStat(
-          "Selected date",
-          formatDateLabel(state.selectedDate),
-          "All tables, charts, calibration values, and shocks stay synchronized to this market day.",
-        )}
-        ${renderHeroStat(
-          "Common dates",
-          String(availableDates.length),
-          "Business days shared by the RO Bonds and ROBOR histories.",
-        )}
-        ${renderHeroStat(
-          "Curve objective",
-          calibration ? formatDecimal(calibration.objective, 6) : "-",
-          "Squared-error objective from the current Nelson-Siegel calibration pass.",
-        )}
-        ${renderHeroStat(
-          "Stress setup",
-          `${state.selectedScenarios.length} scenarios`,
-          formatScenarioSummary(state.selectedScenarios),
-        )}
-        ${renderHeroStat(
-          "Built-in refresh",
-          formatIsoDate(datasets.metadata?.source?.updatedAt),
-          datasets.metadata?.calendarTimeZone ?? "Europe/Bucharest",
-        )}
       </div>
     </section>
   `;
@@ -1122,7 +1124,7 @@ function renderBriefingPanel(datasets, availableDates, simulation) {
     : "Calibration metrics will appear once a valid market date is available.";
 
   return `
-    <aside class="card briefing-panel">
+    <section class="card readout-panel">
       <div class="section-heading">
         <div>
           <p class="section-kicker">Readout</p>
@@ -1131,7 +1133,7 @@ function renderBriefingPanel(datasets, availableDates, simulation) {
         <span class="status-pill">${escapeHtml(activeTab.label)}</span>
       </div>
 
-      <div class="briefing-list">
+      <div class="briefing-grid">
         ${renderBriefingCard(activeTab.kicker, activeTab.title, activeTab.description)}
         ${renderBriefingCard(
           "Coverage",
@@ -1147,7 +1149,7 @@ function renderBriefingPanel(datasets, availableDates, simulation) {
           `${formatScenarioSummary(state.selectedScenarios)}. Shock edits persist locally between visits.`,
         )}
       </div>
-    </aside>
+    </section>
   `;
 }
 
@@ -1299,13 +1301,6 @@ function render() {
               The integrated RO Bonds and ROBOR history is being prepared for the simulator.
             </p>
           </div>
-          <div class="hero-side">
-            ${renderHeroStat(
-              "Data sources",
-              "RO Bonds + ROBOR",
-              "Preparing the bundled historical series and workbook metadata.",
-            )}
-          </div>
         </section>
       </div>
     `;
@@ -1368,7 +1363,8 @@ function render() {
   app.innerHTML = `
     <div class="page-shell">
       ${renderHeader()}
-      ${renderHero(state.datasets, availableDates, simulation)}
+      ${renderHero(availableDates)}
+      ${renderBriefingPanel(state.datasets, availableDates, simulation)}
 
       <section class="page-section" id="simulator-section">
         <section class="section-intro">
@@ -1380,42 +1376,38 @@ function render() {
           </p>
         </section>
 
-        <div class="workspace-grid">
-          <section class="card simulator-panel">
-            <div class="section-heading">
-              <div>
-                <p class="section-kicker">${escapeHtml(activeTab.kicker)}</p>
-                <h2>${escapeHtml(activeTab.title)}</h2>
-              </div>
-              <span class="status-pill">${escapeHtml(activeTab.label)}</span>
+        <section class="card simulator-panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">${escapeHtml(activeTab.kicker)}</p>
+              <h2>${escapeHtml(activeTab.title)}</h2>
             </div>
+            <span class="status-pill">${escapeHtml(activeTab.label)}</span>
+          </div>
 
-            <p class="helper-copy">
-              ${escapeHtml(activeTab.description)} Use the market-date selector to refresh the entire
-              workspace. Shock parameters are stored locally in your browser.
-            </p>
+          <p class="helper-copy">
+            ${escapeHtml(activeTab.description)} Use the market-date selector to refresh the entire
+            workspace. Shock parameters are stored locally in your browser.
+          </p>
 
-            <div class="simulator-toolbar">
-              <label class="field-card date-picker-card">
-                <span class="field-label">Market date</span>
-                <input type="date" value="${escapeHtml(state.selectedDate ?? "")}" />
-              </label>
+          <div class="simulator-toolbar">
+            <label class="field-card date-picker-card">
+              <span class="field-label">${escapeHtml(activeTab.label)} date</span>
+              <input type="date" value="${escapeHtml(state.selectedDate ?? "")}" />
+            </label>
 
-              <div class="metric-pills">
-                ${renderPill("Latest overlap", formatDateLabel(availableDates[0]))}
-                ${renderPill("Common dates", String(availableDates.length))}
-                ${renderPill("Stress scenarios", String(state.selectedScenarios.length))}
-                ${renderPill("Updated", formatIsoDate(state.datasets.metadata?.source?.updatedAt))}
-              </div>
+            <div class="metric-pills">
+              ${renderPill("Active market date", formatDateLabel(state.selectedDate))}
+              ${renderPill("Latest overlap", formatDateLabel(availableDates[0]))}
+              ${renderPill("Common dates", String(availableDates.length))}
+              ${renderPill("Stress scenarios", String(state.selectedScenarios.length))}
+              ${renderPill("Updated", formatIsoDate(state.datasets.metadata?.source?.updatedAt))}
             </div>
+          </div>
 
-            ${renderFeedback()}
-            ${renderTabs()}
-            ${activePanel}
-          </section>
-
-          ${renderBriefingPanel(state.datasets, availableDates, simulation)}
-        </div>
+          ${renderFeedback()}
+          ${activePanel}
+        </section>
       </section>
 
       ${renderFrameworkSection(state.datasets, availableDates, simulation)}
@@ -1447,6 +1439,10 @@ async function onChange(event) {
     }
 
     clearFeedback();
+    state.selectedDates = {
+      ...state.selectedDates,
+      [state.activeTab]: nextDate,
+    };
     state.selectedDate = nextDate;
     render();
     return;
@@ -1551,6 +1547,7 @@ async function onClick(event) {
 
   if (tab) {
     state.activeTab = tab;
+    syncSelectedDate();
     clearFeedback();
     render();
   }
