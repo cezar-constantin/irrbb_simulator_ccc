@@ -372,6 +372,11 @@ svg {
   gap: 24px;
 }
 
+.overview-copy {
+  display: grid;
+  gap: 14px;
+}
+
 .section-intro {
   padding: 8px 4px 0;
   display: grid;

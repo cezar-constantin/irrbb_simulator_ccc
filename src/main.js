@@ -1092,16 +1092,9 @@ function renderHero(availableDates) {
 }
 
 function renderDescriptionTab(datasets, simulation, availableDates) {
-  const selectedDateLabel = formatDateLabel(state.selectedDate);
-  const latestOverlap = formatDateLabel(availableDates[0]);
-  const earliestOverlap = formatDateLabel(availableDates.at(-1));
-  const calibrationObjective = simulation
-    ? formatDecimal(simulation.calibration.objective, 6)
-    : "-";
-
   return `
     <section class="panel stack">
-      <div class="section-header">
+      <div class="section-header compact">
         <div>
           <h2>Description</h2>
           <p>
@@ -1110,33 +1103,25 @@ function renderDescriptionTab(datasets, simulation, availableDates) {
             while keeping the selected market date tied to the tab you are using.
           </p>
         </div>
-        <div class="metric-pills">
-          ${renderPill("Example date", selectedDateLabel)}
-          ${renderPill("Market window", `${earliestOverlap} to ${latestOverlap}`)}
-          ${renderPill("Curve objective", calibrationObjective)}
-        </div>
       </div>
 
-      <div class="panel-grid">
-        <article class="explain-card">
-          <p class="card-kicker">Workflow</p>
-          <h3>From market history to stressed discount factors</h3>
-          <p>
-            The simulator starts from built-in ROBOR and Romanian government bond data, rebuilds an
-            observed zero-coupon curve, extends it with Nelson-Siegel calibration, and finally applies
-            IRRBB-style shocks to compare stressed yield curves and discount factors.
-          </p>
-        </article>
+      <div class="overview-copy">
+        <p class="helper-copy">
+          The simulator starts from built-in ROBOR and Romanian government bond data, rebuilds an
+          observed zero-coupon curve, extends it with Nelson-Siegel calibration, and then applies
+          IRRBB-style shocks to compare stressed yield curves and discount factors.
+        </p>
 
-        <article class="explain-card">
-          <p class="card-kicker">How to use it</p>
-          <h3>Move across the tabs without losing context</h3>
-          <p>
-            Use Input data to inspect the raw series, Yield curve to rebuild the market-implied
-            term structure, Bootstrapped curve to review the fitted extension, and Stress tests
-            to tune the supervisory shocks. Each tab remembers its own selected date.
-          </p>
-        </article>
+        <p class="helper-copy">
+          Use Input data to inspect the raw market series, Yield curve to rebuild the market-implied
+          term structure, Bootstrapped curve to review the fitted extension, and Stress tests to tune
+          the supervisory shocks. Each analytical tab remembers its own selected date.
+        </p>
+
+        <p class="helper-copy">
+          The goal is to keep the full workflow visible in one place so you can move from source data
+          to calibration and stress outputs without losing the connection between each step.
+        </p>
       </div>
     </section>
   `;
@@ -1390,6 +1375,7 @@ function render() {
 
   const availableDates = getAvailableDates(state.datasets);
   const activeTab = getTabDefinition(state.activeTab);
+  const isDescriptionTab = state.activeTab === "description";
   let simulation = null;
   let simulationError = "";
 
@@ -1468,10 +1454,17 @@ function render() {
           </div>
 
           <p class="helper-copy">
-            ${escapeHtml(activeTab.description)} Use the market-date selector to refresh the entire
-            workspace. Shock parameters are stored locally in your browser.
+            ${
+              isDescriptionTab
+                ? escapeHtml(activeTab.description)
+                : `${escapeHtml(activeTab.description)} Use the market-date selector to refresh the entire workspace. Shock parameters are stored locally in your browser.`
+            }
           </p>
 
+          ${
+            isDescriptionTab
+              ? ""
+              : `
           <div class="simulator-toolbar">
             <label class="field-card date-picker-card">
               <span class="field-label">${escapeHtml(activeTab.label)} date</span>
@@ -1485,7 +1478,8 @@ function render() {
               ${renderPill("Stress scenarios", String(state.selectedScenarios.length))}
               ${renderPill("Updated", formatIsoDate(state.datasets.metadata?.source?.updatedAt))}
             </div>
-          </div>
+          </div>`
+          }
 
           ${renderFeedback()}
           ${activePanel}
