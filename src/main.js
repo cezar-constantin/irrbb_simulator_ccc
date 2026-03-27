@@ -93,7 +93,6 @@ const STRESS_SCENARIOS = [
 
 const PORTFOLIO_URL = "https://www.cezar-constantin-chirila.com/portfolio/";
 const PERSONAL_SITE_URL = "https://www.cezar-constantin-chirila.com/";
-const TARGET_REPO_URL = "https://github.com/cezar-constantin/irrbb_simulator_ccc";
 const CONTACT_EMAIL = "contact@cezar-constantin-chirila.com";
 const CONTACT_FORM_ENDPOINT = "https://formsubmit.co/ajax/contact@cezar-constantin-chirila.com";
 
@@ -1065,15 +1064,6 @@ function renderHeader() {
           `,
         ).join("")}
       </div>
-
-      <div class="header-actions">
-        <a class="header-chip" href="${PORTFOLIO_URL}" target="_blank" rel="noreferrer">
-          AI Portfolio
-        </a>
-        <a class="header-chip is-strong" href="${TARGET_REPO_URL}" target="_blank" rel="noreferrer">
-          GitHub repo
-        </a>
-      </div>
     </header>
   `;
 }
@@ -1129,70 +1119,25 @@ function renderDescriptionTab(datasets, simulation, availableDates) {
 
       <div class="panel-grid">
         <article class="explain-card">
-          <p class="card-kicker">Step 1</p>
-          <h3>Input data</h3>
+          <p class="card-kicker">Workflow</p>
+          <h3>From market history to stressed discount factors</h3>
           <p>
-            Start by checking the built-in ROBOR and RO Bonds history. This shows the raw market
-            observations that feed the rest of the simulator.
+            The simulator starts from built-in ROBOR and Romanian government bond data, rebuilds an
+            observed zero-coupon curve, extends it with Nelson-Siegel calibration, and finally applies
+            IRRBB-style shocks to compare stressed yield curves and discount factors.
           </p>
         </article>
 
         <article class="explain-card">
-          <p class="card-kicker">Step 2</p>
-          <h3>Yield curve</h3>
+          <p class="card-kicker">How to use it</p>
+          <h3>Move across the tabs without losing context</h3>
           <p>
-            The simulator converts those market quotes into fair rates, discount factors, and an
-            observed zero-coupon curve for the chosen date.
-          </p>
-        </article>
-
-        <article class="explain-card">
-          <p class="card-kicker">Step 3</p>
-          <h3>Bootstrapped curve</h3>
-          <p>
-            A Nelson-Siegel fit extends the observed curve into a smoother continuous term structure,
-            so the calibration quality stays visible instead of hidden.
-          </p>
-        </article>
-
-        <article class="explain-card">
-          <p class="card-kicker">Step 4</p>
-          <h3>Stress tests</h3>
-          <p>
-            Parallel, steepener, flattener, and short-rate shocks can then be adjusted to compare
-            stressed yield curves and discount factors side by side.
+            Use Input data to inspect the raw series, Yield curve to rebuild the market-implied
+            term structure, Bootstrapped curve to review the fitted extension, and Stress tests
+            to tune the supervisory shocks. Each tab remembers its own selected date.
           </p>
         </article>
       </div>
-
-      <section class="panel secondary">
-        <div class="section-header compact">
-          <div>
-            <h3>How to use it</h3>
-            <p>Move from left to right through the tabs or jump directly to the section you need.</p>
-          </div>
-        </div>
-
-        <div class="panel-grid">
-          <article class="explain-card">
-            <p class="card-kicker">Dates</p>
-            <h3>Each tab remembers its own market date.</h3>
-            <p>
-              You can compare different dates across tabs without losing your previous selection when
-              switching between views.
-            </p>
-          </article>
-
-          <article class="explain-card">
-            <p class="card-kicker">Shocks</p>
-            <h3>Stress parameters stay editable.</h3>
-            <p>
-              Scenario inputs remain connected to the stress-testing tab, so the shock curves update
-              immediately when you change a parameter.
-            </p>
-          </article>
-        </div>
-      </section>
     </section>
   `;
 }
