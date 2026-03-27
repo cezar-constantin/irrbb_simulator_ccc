@@ -1,3 +1,3 @@
 export default {
-  base: "/irrbb_simulator/",
+  base: "/irrbb_simulator_ccc/",
 };

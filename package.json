@@ -1,7 +1,7 @@
 {
-  "name": "irrbb-simulator",
+  "name": "irrbb-simulator-ccc",
   "version": "1.0.0",
-  "description": "Online IRRBB simulator generated from the Yield curves workbook.",
+  "description": "Portfolio-styled IRRBB simulator for Romanian yield-curve construction and stress testing.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

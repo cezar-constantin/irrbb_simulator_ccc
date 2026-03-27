@@ -1,6 +1,6 @@
 export function formatPercentage(value, digits = 4) {
   if (value == null || !Number.isFinite(value)) {
-    return "—";
+    return "-";
   }
 
   return `${(value * 100).toFixed(digits)}%`;
@@ -8,7 +8,7 @@ export function formatPercentage(value, digits = 4) {
 
 export function formatShift(value, digits = 2) {
   if (value == null || !Number.isFinite(value)) {
-    return "—";
+    return "-";
   }
 
   return `${(value * 100).toFixed(digits)} bp`;
@@ -16,7 +16,7 @@ export function formatShift(value, digits = 2) {
 
 export function formatDecimal(value, digits = 6) {
   if (value == null || !Number.isFinite(value)) {
-    return "—";
+    return "-";
   }
 
   return value.toFixed(digits);
@@ -24,7 +24,7 @@ export function formatDecimal(value, digits = 6) {
 
 export function formatNumber(value, digits = 6) {
   if (value == null || !Number.isFinite(value)) {
-    return "—";
+    return "-";
   }
 
   return value.toLocaleString("en-US", {
@@ -35,7 +35,7 @@ export function formatNumber(value, digits = 6) {
 
 export function formatDateLabel(value) {
   if (!value) {
-    return "—";
+    return "-";
   }
 
   const parsed = new Date(`${value}T00:00:00`);

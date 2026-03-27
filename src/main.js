@@ -84,6 +84,47 @@ const STRESS_SCENARIOS = [
   },
 ];
 
+const PORTFOLIO_URL = "https://www.cezar-constantin-chirila.com/portfolio/";
+const PERSONAL_SITE_URL = "https://www.cezar-constantin-chirila.com/";
+const SOURCE_REPO_URL = "https://github.com/cezar-constantin/irrbb_simulator";
+const TARGET_REPO_URL = "https://github.com/cezar-constantin/irrbb_simulator_ccc";
+const CONTACT_EMAIL = "contact@cezar-constantin-chirila.com";
+
+const TAB_DEFINITIONS = [
+  {
+    key: "data",
+    label: "Input data",
+    kicker: "Input history",
+    title: "Inspect the integrated market history.",
+    description:
+      "Review the bundled ROBOR and Romanian government bond series that feed the downstream analytics.",
+  },
+  {
+    key: "yield",
+    label: "Yield curve",
+    kicker: "Market rates",
+    title: "Rebuild the observed zero-coupon curve.",
+    description:
+      "Transform ROBOR and RO Bonds quotes into market rates, discount factors, and an observed curve for the selected date.",
+  },
+  {
+    key: "bootstrapped",
+    label: "Bootstrapped curve",
+    kicker: "Calibration",
+    title: "Extend the curve with Nelson-Siegel fitting.",
+    description:
+      "Match the observed points with a calibrated four-parameter Nelson-Siegel surface and inspect the fitting objective.",
+  },
+  {
+    key: "discount",
+    label: "Stress tests",
+    kicker: "IRRBB shocks",
+    title: "Shift the curve and compare discount factors.",
+    description:
+      "Tune supervisory stress parameters and evaluate shocked yield curves and discount factors side by side.",
+  },
+];
+
 const HISTORY_WINDOWS = [
   { key: "all", label: "Full history", days: null },
   { key: "3m", label: "3M", days: 92 },
@@ -179,6 +220,10 @@ function getScenarioDefinition(key) {
   return STRESS_SCENARIOS.find((scenario) => scenario.key === key);
 }
 
+function getTabDefinition(key) {
+  return TAB_DEFINITIONS.find((tab) => tab.key === key) ?? TAB_DEFINITIONS[0];
+}
+
 function buildDefaultHistoryCharts() {
   return Object.fromEntries(
     Object.entries(INPUT_HISTORY_CHARTS).map(([chartKey, config]) => [
@@ -247,6 +292,26 @@ function renderPill(label, value) {
   `;
 }
 
+function renderHeroStat(label, value, note) {
+  return `
+    <article class="hero-stat">
+      <p class="metric-label">${escapeHtml(label)}</p>
+      <strong>${escapeHtml(value)}</strong>
+      <p>${escapeHtml(note)}</p>
+    </article>
+  `;
+}
+
+function renderBriefingCard(kicker, title, copy) {
+  return `
+    <article class="briefing-card">
+      <p class="card-kicker">${escapeHtml(kicker)}</p>
+      <h3>${escapeHtml(title)}</h3>
+      <p>${escapeHtml(copy)}</p>
+    </article>
+  `;
+}
+
 function renderDatasetSummary(label, summary, sourceLabel) {
   return `
     <div class="data-card">
@@ -277,6 +342,26 @@ function formatRateLabel(value) {
   }
 
   return `${formatNumber(value, 2)}%`;
+}
+
+function formatIsoDate(value) {
+  if (!value) {
+    return "-";
+  }
+
+  return formatDateLabel(String(value).slice(0, 10));
+}
+
+function formatScenarioSummary(selectedScenarios) {
+  const labels = selectedScenarios
+    .map((key) => getScenarioDefinition(key)?.label)
+    .filter(Boolean);
+
+  if (!labels.length) {
+    return "No scenarios selected";
+  }
+
+  return labels.join(", ");
 }
 
 function getHistoryRows(rows, selectedDate, windowKey) {
@@ -943,25 +1028,248 @@ function renderDiscountFactorsTab(simulation) {
   `;
 }
 
-function renderTabs() {
-  const tabs = [
-    ["data", "Input data"],
-    ["yield", "Yield curve"],
-    ["bootstrapped", "Bootstrapped curve"],
-    ["discount", "Stress tests"],
-  ];
+function renderHeader() {
+  return `
+    <header class="site-header" aria-label="Site navigation">
+      <a class="brand-mark" href="${PORTFOLIO_URL}" target="_blank" rel="noreferrer">
+        <span class="brand-copy">
+          <strong>IRRBB Simulator</strong>
+          <span>CCC portfolio-styled Romanian RON rate-risk lab</span>
+        </span>
+      </a>
+
+      <nav class="top-nav" aria-label="Section navigation">
+        <a class="nav-link" href="#simulator-section">Simulator</a>
+        <a class="nav-link" href="#framework-section">Framework</a>
+        <a class="nav-link" href="#contact-section">Contact</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="header-chip" href="${PORTFOLIO_URL}" target="_blank" rel="noreferrer">
+          AI Portfolio
+        </a>
+        <a class="header-chip is-strong" href="${TARGET_REPO_URL}" target="_blank" rel="noreferrer">
+          GitHub repo
+        </a>
+      </div>
+    </header>
+  `;
+}
+
+function renderHero(datasets, availableDates, simulation) {
+  const overlapStart = formatDateLabel(availableDates.at(-1));
+  const overlapEnd = formatDateLabel(availableDates[0]);
+  const calibration = simulation?.calibration;
 
   return `
-    <div class="tab-bar">
-      ${tabs
-        .map(
-          ([id, label]) => `
-            <button class="tab ${state.activeTab === id ? "is-active" : ""}" data-tab="${id}">
-              ${escapeHtml(label)}
+    <section class="hero card">
+      <div class="hero-main">
+        <p class="eyebrow">IRRBB simulator</p>
+        <h1>Romanian yield-curve construction, calibration, and stress testing in one hosted workspace.</h1>
+        <p class="hero-text">
+          This portfolio-styled simulator combines integrated ROBOR and Romanian government bond history,
+          observed curve construction, Nelson-Siegel fitting, and editable IRRBB shocks without leaving
+          the browser.
+        </p>
+        <p class="hero-performance">
+          Market coverage:
+          <strong>${escapeHtml(overlapStart)} to ${escapeHtml(overlapEnd)}</strong>
+        </p>
+      </div>
+
+      <div class="hero-side">
+        ${renderHeroStat(
+          "Selected date",
+          formatDateLabel(state.selectedDate),
+          "All tables, charts, calibration values, and shocks stay synchronized to this market day.",
+        )}
+        ${renderHeroStat(
+          "Common dates",
+          String(availableDates.length),
+          "Business days shared by the RO Bonds and ROBOR histories.",
+        )}
+        ${renderHeroStat(
+          "Curve objective",
+          calibration ? formatDecimal(calibration.objective, 6) : "-",
+          "Squared-error objective from the current Nelson-Siegel calibration pass.",
+        )}
+        ${renderHeroStat(
+          "Stress setup",
+          `${state.selectedScenarios.length} scenarios`,
+          formatScenarioSummary(state.selectedScenarios),
+        )}
+        ${renderHeroStat(
+          "Built-in refresh",
+          formatIsoDate(datasets.metadata?.source?.updatedAt),
+          datasets.metadata?.calendarTimeZone ?? "Europe/Bucharest",
+        )}
+      </div>
+    </section>
+  `;
+}
+
+function renderBriefingPanel(datasets, availableDates, simulation) {
+  const activeTab = getTabDefinition(state.activeTab);
+  const coverageCopy = availableDates.length
+    ? `${formatDateLabel(availableDates.at(-1))} through ${formatDateLabel(availableDates[0])}.`
+    : "No overlapping dates are currently available.";
+
+  const calibrationCopy = simulation
+    ? `Lambda ${formatDecimal(simulation.calibration.lambda, 6)} with objective ${formatDecimal(
+        simulation.calibration.objective,
+        6,
+      )} across ${simulation.marketRates.length} market inputs.`
+    : "Calibration metrics will appear once a valid market date is available.";
+
+  return `
+    <aside class="card briefing-panel">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Readout</p>
+          <h2>What the workspace is doing</h2>
+        </div>
+        <span class="status-pill">${escapeHtml(activeTab.label)}</span>
+      </div>
+
+      <div class="briefing-list">
+        ${renderBriefingCard(activeTab.kicker, activeTab.title, activeTab.description)}
+        ${renderBriefingCard(
+          "Coverage",
+          `${datasets.metadata?.counts?.roBonds ?? datasets.roBonds.length} bond rows and ${
+            datasets.metadata?.counts?.robor ?? datasets.robor.length
+          } ROBOR rows`,
+          coverageCopy,
+        )}
+        ${renderBriefingCard("Calibration", "Current fit snapshot", calibrationCopy)}
+        ${renderBriefingCard(
+          "Stress testing",
+          "Scenario configuration",
+          `${formatScenarioSummary(state.selectedScenarios)}. Shock edits persist locally between visits.`,
+        )}
+      </div>
+    </aside>
+  `;
+}
+
+function renderFrameworkSection(datasets, availableDates, simulation) {
+  const overlapCopy = availableDates.length
+    ? `${formatDateLabel(availableDates.at(-1))} through ${formatDateLabel(availableDates[0])}`
+    : "No overlap available";
+  const curveCopy = simulation
+    ? `${simulation.marketRates.length} market instruments and ${simulation.bootstrappedCurve.length} fitted curve nodes are rebuilt for the selected date.`
+    : "Curve metrics appear once a valid market date is available.";
+
+  return `
+    <section class="page-section" id="framework-section">
+      <section class="section-intro">
+        <p class="section-kicker">Framework</p>
+        <h2>Understand the data, the fit, and the supervisory shocks.</h2>
+        <p>
+          The simulator keeps the workbook translation visible: where the data comes from, how the
+          curve is rebuilt, and how the IRRBB shocks propagate into discount factors.
+        </p>
+      </section>
+
+      <div class="explain-grid">
+        <article class="explain-card">
+          <p class="card-kicker">Input history</p>
+          <h3>Bundled RO Bonds and ROBOR coverage</h3>
+          <p>
+            Shared market window: ${escapeHtml(overlapCopy)}. Source refresh:
+            ${escapeHtml(formatIsoDate(datasets.metadata?.source?.updatedAt))}.
+          </p>
+        </article>
+
+        <article class="explain-card">
+          <p class="card-kicker">Curve construction</p>
+          <h3>Observed curve first, smooth extension second</h3>
+          <p>${escapeHtml(curveCopy)}</p>
+        </article>
+
+        <article class="explain-card">
+          <p class="card-kicker">Scenario design</p>
+          <h3>Editable shocks with persistent tuning</h3>
+          <p>
+            Active setup: ${escapeHtml(formatScenarioSummary(state.selectedScenarios))}. Browser
+            storage keeps the current shock inputs available for the next session.
+          </p>
+        </article>
+      </div>
+    </section>
+  `;
+}
+
+function renderFooterSection() {
+  return `
+    <section class="footer-panel-grid">
+      <section class="card support-card" id="contact-section">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Contact</p>
+            <h2>Ask about the simulator or the build.</h2>
+          </div>
+          <span class="status-pill">Direct links</span>
+        </div>
+
+        <p class="helper-copy contact-copy">
+          For broader work across AI, risk, and decision systems, visit
+          <a href="${PERSONAL_SITE_URL}" target="_blank" rel="noreferrer">${PERSONAL_SITE_URL}</a>.
+          Questions about this build can also be sent to
+          <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.
+        </p>
+
+        <div class="support-actions">
+          <a class="support-link is-strong" href="${TARGET_REPO_URL}" target="_blank" rel="noreferrer">
+            New GitHub repo
+          </a>
+          <a class="support-link" href="${SOURCE_REPO_URL}" target="_blank" rel="noreferrer">
+            Original repo
+          </a>
+          <a class="support-link" href="${PORTFOLIO_URL}" target="_blank" rel="noreferrer">
+            AI portfolio
+          </a>
+          <a class="support-link" href="mailto:${CONTACT_EMAIL}">
+            Email
+          </a>
+        </div>
+      </section>
+
+      <section class="card disclaimer-card">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Disclaimer</p>
+            <h2>Educational use only</h2>
+          </div>
+          <span class="status-pill">Non-commercial material</span>
+        </div>
+
+        <p class="helper-copy">
+          The data transformations, bootstrapping logic, calibration outputs, and stress scenarios in
+          this simulator are provided for educational and illustrative purposes only.
+        </p>
+        <p class="helper-copy">
+          They do not constitute legal, regulatory, accounting, audit, tax, treasury, investment, or
+          model risk management advice, and they should not be used as a production control framework.
+        </p>
+        <p class="helper-copy">
+          Any operational use would require independent validation, governance review, and oversight by
+          appropriately qualified professionals.
+        </p>
+      </section>
+    </section>
+  `;
+}
+
+function renderTabs() {
+  return `
+    <div class="tab-bar" aria-label="Simulator sections">
+      ${TAB_DEFINITIONS.map(
+        (tab) => `
+            <button class="tab ${state.activeTab === tab.key ? "is-active" : ""}" data-tab="${tab.key}">
+              ${escapeHtml(tab.label)}
             </button>
           `,
-        )
-        .join("")}
+      ).join("")}
     </div>
   `;
 }
@@ -981,11 +1289,23 @@ function renderFeedback() {
 function render() {
   if (!state.datasets) {
     app.innerHTML = `
-      <div class="layout">
-        <section class="panel">
-          <span class="eyebrow">IRRBB simulator</span>
-          <h2>Loading historical market data...</h2>
-          <p>The integrated RO Bonds and ROBOR history is being prepared for the simulator.</p>
+      <div class="page-shell">
+        ${renderHeader()}
+        <section class="hero card">
+          <div class="hero-main">
+            <p class="eyebrow">IRRBB simulator</p>
+            <h1>Loading historical market data...</h1>
+            <p class="hero-text">
+              The integrated RO Bonds and ROBOR history is being prepared for the simulator.
+            </p>
+          </div>
+          <div class="hero-side">
+            ${renderHeroStat(
+              "Data sources",
+              "RO Bonds + ROBOR",
+              "Preparing the bundled historical series and workbook metadata.",
+            )}
+          </div>
         </section>
       </div>
     `;
@@ -995,6 +1315,7 @@ function render() {
   syncSelectedDate();
 
   const availableDates = getAvailableDates(state.datasets);
+  const activeTab = getTabDefinition(state.activeTab);
   let simulation = null;
   let simulationError = "";
 
@@ -1010,48 +1331,28 @@ function render() {
     }
   }
 
-  const hero = `
-    <header class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">IRRBB simulator</span>
-        <h1>Romanian yield curve, bootstrapping, and stress test simulator.</h1>
-        <p>
-          This web simulator uses Robor and Romanian Bonds inputs, boostraps the yield curve and
-          calibrates a continous time version to the observed market quotes.
-        </p>
-        <p>
-          Additionally, stressed discount factors are calculated based on the user input, for
-          parallel shifts, steepener, flattener and short up/down scenarios.
-        </p>
-      </div>
-      <div class="hero-card hero-toolbar">
-        <label class="date-picker">
-          <span>Market date</span>
-          <input type="date" value="${escapeHtml(state.selectedDate ?? "")}" />
-        </label>
-        <div class="hero-meta">
-          ${renderPill("Latest overlap", formatDateLabel(availableDates[0]))}
-          ${renderPill("Seed timezone", state.datasets.metadata?.calendarTimeZone ?? "Europe/Bucharest")}
-          ${renderPill("Historical rows", `${state.datasets.roBonds.length + state.datasets.robor.length} rows`)}
-        </div>
-      </div>
-    </header>
-  `;
-
   let activePanel = "";
 
   if (!availableDates.length) {
     activePanel = `
-      <section class="panel">
-        <h2>No common dates found</h2>
-        <p>The bundled RO Bonds and ROBOR histories do not currently share a common market date.</p>
+      <section class="panel stack">
+        <div class="section-header compact">
+          <div>
+            <h3>No common dates found</h3>
+            <p>The bundled RO Bonds and ROBOR histories do not currently share a common market date.</p>
+          </div>
+        </div>
       </section>
     `;
   } else if (simulationError) {
     activePanel = `
-      <section class="panel">
-        <h2>Calculation issue</h2>
-        <p>${escapeHtml(simulationError)}</p>
+      <section class="panel stack">
+        <div class="section-header compact">
+          <div>
+            <h3>Calculation issue</h3>
+            <p>${escapeHtml(simulationError)}</p>
+          </div>
+        </div>
       </section>
     `;
   } else if (state.activeTab === "data") {
@@ -1065,11 +1366,60 @@ function render() {
   }
 
   app.innerHTML = `
-    <div class="layout">
-      ${hero}
-      ${renderFeedback()}
-      ${renderTabs()}
-      ${activePanel}
+    <div class="page-shell">
+      ${renderHeader()}
+      ${renderHero(state.datasets, availableDates, simulation)}
+
+      <section class="page-section" id="simulator-section">
+        <section class="section-intro">
+          <p class="section-kicker">Interactive demo</p>
+          <h2>Run the full IRRBB chain inside one interface.</h2>
+          <p>
+            The simulator keeps data inspection, yield-curve construction, calibration, and stressed
+            discount factors in one narrative workspace so each step stays traceable.
+          </p>
+        </section>
+
+        <div class="workspace-grid">
+          <section class="card simulator-panel">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">${escapeHtml(activeTab.kicker)}</p>
+                <h2>${escapeHtml(activeTab.title)}</h2>
+              </div>
+              <span class="status-pill">${escapeHtml(activeTab.label)}</span>
+            </div>
+
+            <p class="helper-copy">
+              ${escapeHtml(activeTab.description)} Use the market-date selector to refresh the entire
+              workspace. Shock parameters are stored locally in your browser.
+            </p>
+
+            <div class="simulator-toolbar">
+              <label class="field-card date-picker-card">
+                <span class="field-label">Market date</span>
+                <input type="date" value="${escapeHtml(state.selectedDate ?? "")}" />
+              </label>
+
+              <div class="metric-pills">
+                ${renderPill("Latest overlap", formatDateLabel(availableDates[0]))}
+                ${renderPill("Common dates", String(availableDates.length))}
+                ${renderPill("Stress scenarios", String(state.selectedScenarios.length))}
+                ${renderPill("Updated", formatIsoDate(state.datasets.metadata?.source?.updatedAt))}
+              </div>
+            </div>
+
+            ${renderFeedback()}
+            ${renderTabs()}
+            ${activePanel}
+          </section>
+
+          ${renderBriefingPanel(state.datasets, availableDates, simulation)}
+        </div>
+      </section>
+
+      ${renderFrameworkSection(state.datasets, availableDates, simulation)}
+      ${renderFooterSection()}
     </div>
   `;
 }
@@ -1201,6 +1551,7 @@ async function onClick(event) {
 
   if (tab) {
     state.activeTab = tab;
+    clearFeedback();
     render();
   }
 }

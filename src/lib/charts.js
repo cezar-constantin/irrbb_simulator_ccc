@@ -1,13 +1,13 @@
 import { escapeHtml, formatPercentage } from "./formatters.js";
 
 const palette = [
-  "#2f69c7",
-  "#2dc3d6",
-  "#2397c9",
-  "#244c97",
-  "#4f8fd8",
-  "#1c3568",
-  "#66d2df",
+  "#3b82f6",
+  "#22d3ee",
+  "#fb923c",
+  "#60a5fa",
+  "#38bdf8",
+  "#f59e0b",
+  "#a5f3fc",
 ];
 
 function buildPath(points, dimensions, xMin, xMax, yMin, yMax) {

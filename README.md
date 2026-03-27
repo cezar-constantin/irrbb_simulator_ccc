@@ -1,6 +1,6 @@
-# IRRBB Yield Curve Simulator
+# CCC IRRBB Simulator
 
-This project turns the `Yield curves.xls` workbook into a browser-based simulator with four tabs:
+This project turns the `Yield curves.xls` workbook into a browser-based simulator with the same dark, portfolio-style presentation language used in `neural_network_ccc`. The app keeps four analytical tabs:
 
 - `Input data`: review the integrated RO Bonds / ROBOR history used by the simulator
 - `Yield curve`: rebuild the workbook's market-rates and yield-curve tables for a selected date
@@ -25,6 +25,8 @@ npm run build
 ```
 
 The static build is written to `dist/` and can be deployed to Netlify, Vercel, GitHub Pages, or any static web host.
+
+For GitHub Pages in this copied repository, the Vite base path is configured for `/irrbb_simulator_ccc/`.
 
 ## Workbook translation notes
 
