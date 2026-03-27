@@ -93,9 +93,9 @@ const STRESS_SCENARIOS = [
 
 const PORTFOLIO_URL = "https://www.cezar-constantin-chirila.com/portfolio/";
 const PERSONAL_SITE_URL = "https://www.cezar-constantin-chirila.com/";
-const SOURCE_REPO_URL = "https://github.com/cezar-constantin/irrbb_simulator";
 const TARGET_REPO_URL = "https://github.com/cezar-constantin/irrbb_simulator_ccc";
 const CONTACT_EMAIL = "contact@cezar-constantin-chirila.com";
+const CONTACT_FORM_ENDPOINT = "https://formsubmit.co/ajax/contact@cezar-constantin-chirila.com";
 
 const TAB_DEFINITIONS = [
   {
@@ -1197,54 +1197,6 @@ function renderDescriptionTab(datasets, simulation, availableDates) {
   `;
 }
 
-function renderFrameworkSection(datasets, availableDates, simulation) {
-  const overlapCopy = availableDates.length
-    ? `${formatDateLabel(availableDates.at(-1))} through ${formatDateLabel(availableDates[0])}`
-    : "No overlap available";
-  const curveCopy = simulation
-    ? `${simulation.marketRates.length} market instruments and ${simulation.bootstrappedCurve.length} fitted curve nodes are rebuilt for the selected date.`
-    : "Curve metrics appear once a valid market date is available.";
-
-  return `
-    <section class="page-section" id="framework-section">
-      <section class="section-intro">
-        <p class="section-kicker">Framework</p>
-        <h2>Understand the data, the fit, and the supervisory shocks.</h2>
-        <p>
-          The simulator keeps the workbook translation visible: where the data comes from, how the
-          curve is rebuilt, and how the IRRBB shocks propagate into discount factors.
-        </p>
-      </section>
-
-      <div class="explain-grid">
-        <article class="explain-card">
-          <p class="card-kicker">Input history</p>
-          <h3>Bundled RO Bonds and ROBOR coverage</h3>
-          <p>
-            Shared market window: ${escapeHtml(overlapCopy)}. Source refresh:
-            ${escapeHtml(formatIsoDate(datasets.metadata?.source?.updatedAt))}.
-          </p>
-        </article>
-
-        <article class="explain-card">
-          <p class="card-kicker">Curve construction</p>
-          <h3>Observed curve first, smooth extension second</h3>
-          <p>${escapeHtml(curveCopy)}</p>
-        </article>
-
-        <article class="explain-card">
-          <p class="card-kicker">Scenario design</p>
-          <h3>Editable shocks with persistent tuning</h3>
-          <p>
-            Active setup: ${escapeHtml(formatScenarioSummary(state.selectedScenarios))}. Browser
-            storage keeps the current shock inputs available for the next session.
-          </p>
-        </article>
-      </div>
-    </section>
-  `;
-}
-
 function renderFooterSection() {
   return `
     <section class="footer-panel-grid">
@@ -1254,30 +1206,73 @@ function renderFooterSection() {
             <p class="section-kicker">Contact</p>
             <h2>Ask about the simulator or the build.</h2>
           </div>
-          <span class="status-pill">Direct links</span>
+          <span class="status-pill">Direct contact form</span>
         </div>
 
         <p class="helper-copy contact-copy">
-          For broader work across AI, risk, and decision systems, visit
-          <a href="${PERSONAL_SITE_URL}" target="_blank" rel="noreferrer">${PERSONAL_SITE_URL}</a>.
-          Questions about this build can also be sent to
+          Messages sent through this form go to
           <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.
+          For broader work across AI, risk, and decision systems, visit
+          <a href="${PERSONAL_SITE_URL}" target="_blank" rel="noreferrer">
+            www.cezar-constantin-chirila.com
+          </a>.
         </p>
 
-        <div class="support-actions">
-          <a class="support-link is-strong" href="${TARGET_REPO_URL}" target="_blank" rel="noreferrer">
-            New GitHub repo
-          </a>
-          <a class="support-link" href="${SOURCE_REPO_URL}" target="_blank" rel="noreferrer">
-            Original repo
-          </a>
-          <a class="support-link" href="${PORTFOLIO_URL}" target="_blank" rel="noreferrer">
-            AI portfolio
-          </a>
-          <a class="support-link" href="mailto:${CONTACT_EMAIL}">
-            Email
-          </a>
-        </div>
+        <form class="support-form" id="contact-form" novalidate>
+          <div class="panel-subgrid two-up">
+            <label class="field-card" for="contact-name">
+              <span class="field-label">Full name</span>
+              <input class="field-input" id="contact-name" name="Full name" type="text" autocomplete="name" required />
+            </label>
+
+            <label class="field-card" for="contact-company">
+              <span class="field-label">Company</span>
+              <input class="field-input" id="contact-company" name="Company" type="text" autocomplete="organization" />
+            </label>
+
+            <label class="field-card" for="contact-email">
+              <span class="field-label">Email address</span>
+              <input
+                class="field-input"
+                id="contact-email"
+                name="Email address"
+                type="email"
+                autocomplete="email"
+                required
+              />
+            </label>
+
+            <label class="field-card" for="contact-topic">
+              <span class="field-label">Question topic</span>
+              <input
+                class="field-input"
+                id="contact-topic"
+                name="Question topic"
+                type="text"
+                placeholder="Demo feedback, technical question, collaboration..."
+              />
+            </label>
+          </div>
+
+          <label class="field-card" for="contact-question">
+            <span class="field-label">Question</span>
+            <textarea
+              class="editor-textarea contact-textarea"
+              id="contact-question"
+              name="Question"
+              rows="6"
+              placeholder="Write your question, context, or use case here."
+              required
+            ></textarea>
+          </label>
+
+          <input class="visually-hidden-input" type="text" name="_honey" tabindex="-1" autocomplete="off" />
+
+          <div class="contact-form-actions">
+            <button class="primary-button" id="contact-submit-button" type="submit">Send message</button>
+            <p class="contact-status" id="contact-status" aria-live="polite"></p>
+          </div>
+        </form>
       </section>
 
       <section class="card disclaimer-card">
@@ -1306,6 +1301,21 @@ function renderFooterSection() {
   `;
 }
 
+function setContactStatus(message, tone = "") {
+  const statusElement = document.getElementById("contact-status");
+
+  if (!statusElement) {
+    return;
+  }
+
+  statusElement.textContent = message;
+  statusElement.classList.remove("is-success", "is-error");
+
+  if (tone) {
+    statusElement.classList.add(`is-${tone}`);
+  }
+}
+
 function renderTabs() {
   return `
     <div class="tab-bar" aria-label="Simulator sections">
@@ -1330,6 +1340,86 @@ function renderFeedback() {
   }
 
   return "";
+}
+
+async function onSubmit(event) {
+  const target = event.target;
+
+  if (!(target instanceof HTMLFormElement) || target.id !== "contact-form") {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (!target.reportValidity()) {
+    return;
+  }
+
+  const contactName = target.querySelector("#contact-name");
+  const contactCompany = target.querySelector("#contact-company");
+  const contactEmail = target.querySelector("#contact-email");
+  const contactTopic = target.querySelector("#contact-topic");
+  const contactQuestion = target.querySelector("#contact-question");
+  const submitButton = target.querySelector("#contact-submit-button");
+
+  if (
+    !(contactName instanceof HTMLInputElement) ||
+    !(contactCompany instanceof HTMLInputElement) ||
+    !(contactEmail instanceof HTMLInputElement) ||
+    !(contactTopic instanceof HTMLInputElement) ||
+    !(contactQuestion instanceof HTMLTextAreaElement) ||
+    !(submitButton instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const formData = new FormData(target);
+  const fullName = contactName.value.trim();
+  const company = contactCompany.value.trim();
+  const email = contactEmail.value.trim();
+  const topic = contactTopic.value.trim();
+  const question = contactQuestion.value.trim();
+
+  formData.set("Full name", fullName);
+  formData.set("Company", company || "Not provided");
+  formData.set("Email address", email);
+  formData.set("Question topic", topic || "General question");
+  formData.set("Question", question);
+  formData.set("_subject", `CCC IRRBB Simulator question from ${fullName}`);
+  formData.set("_replyto", email);
+  formData.set("_template", "table");
+  formData.set("_captcha", "false");
+  formData.set("_url", window.location.href);
+
+  submitButton.disabled = true;
+  setContactStatus("Sending question...");
+
+  try {
+    const response = await fetch(CONTACT_FORM_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: formData,
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    if (!response.ok || payload?.success === "false" || payload?.success === false) {
+      throw new Error("Contact form submission failed");
+    }
+
+    setContactStatus("Question sent successfully. You can expect a reply at the address you entered.", "success");
+    target.reset();
+  } catch (error) {
+    console.error(error);
+    setContactStatus(
+      "The form could not be sent right now. Please try again in a moment or email contact@cezar-constantin-chirila.com directly.",
+      "error",
+    );
+  } finally {
+    submitButton.disabled = false;
+  }
 }
 
 function render() {
@@ -1457,7 +1547,6 @@ function render() {
         </section>
       </section>
 
-      ${renderFrameworkSection(state.datasets, availableDates, simulation)}
       ${renderFooterSection()}
     </div>
   `;
@@ -1602,6 +1691,7 @@ async function onClick(event) {
 
 app.addEventListener("change", onChange);
 app.addEventListener("click", onClick);
+app.addEventListener("submit", onSubmit);
 
 render();
 
