@@ -95,6 +95,7 @@ const PORTFOLIO_URL = "https://www.cezar-constantin-chirila.com/portfolio/";
 const PERSONAL_SITE_URL = "https://www.cezar-constantin-chirila.com/";
 const CONTACT_EMAIL = "contact@cezar-constantin-chirila.com";
 const CONTACT_FORM_ENDPOINT = "https://formsubmit.co/ajax/contact@cezar-constantin-chirila.com";
+const BRAND_LOGO_URL = `${import.meta.env.BASE_URL}brand/logo_dark_background.svg`;
 
 const TAB_DEFINITIONS = [
   {
@@ -1045,6 +1046,7 @@ function renderHeader() {
   return `
     <header class="site-header" aria-label="Site navigation">
       <a class="brand-mark" href="${PORTFOLIO_URL}" target="_blank" rel="noreferrer">
+        <img class="brand-logo" src="${BRAND_LOGO_URL}" alt="Cezar Constantin logo" />
         <span class="brand-copy">
           <strong>IRRBB Simulator</strong>
           <span>CCC portfolio-styled Romanian RON rate-risk lab</span>

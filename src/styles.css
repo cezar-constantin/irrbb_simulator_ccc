@@ -146,6 +146,14 @@ svg {
   min-width: 0;
 }
 
+.brand-logo {
+  flex: 0 0 auto;
+  width: auto;
+  height: 38px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
 .brand-copy {
   display: grid;
   gap: 2px;
