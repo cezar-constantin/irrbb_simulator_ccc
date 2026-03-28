@@ -1076,7 +1076,7 @@ function renderHero(availableDates) {
     <section class="hero card">
       <div class="hero-main">
         <p class="eyebrow">IRRBB simulator</p>
-        <h1>Romanian yield-curve construction, calibration, and stress testing in one hosted workspace.</h1>
+        <h1>Romanian yield-curve construction, calibration, and stress testing</h1>
         <p class="hero-text">
           This portfolio-styled simulator combines integrated ROBOR and Romanian government bond history,
           observed curve construction, Nelson-Siegel fitting, and editable IRRBB shocks without leaving
